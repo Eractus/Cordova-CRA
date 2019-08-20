@@ -195,23 +195,88 @@ export default class App extends Component {
     return res;
   };
 
+  createDevicesDetailsUrl = id => {
+    const localTime = this.formatTime(new Date());
+    return `https://www.matainventive.com/cordovaserver/database/jsonmatafloorplan.php?id=${id}&today=${localTime}`;
+  }
+
+  formatTime = date => {
+    const year = date.getFullYear();
+    const month = this.formatSingleDigit(date.getMonth() + 1);
+    const day = this.formatSingleDigit(date.getDate());
+    const hour = this.formatSingleDigit(date.getHours());
+    const min = this.formatSingleDigit(date.getMinutes());
+    const sec = this.formatSingleDigit(date.getSeconds());
+
+    return `${year}-${month}-${day}T${hour}:${min}:${sec}`;
+  }
+
+  formatSingleDigit = timeVal => {
+    return timeVal = timeVal < 10 ? `0${timeVal}` : timeVal;
+  }
+
   loadData = async id => {
     const cellsUrl = `https://www.matainventive.com/cordovaserver/database/jsonmatacell.php?id=${id}`;
     const cells = await this.fetchData(cellsUrl).then(cellsData => cellsData);
     const devicesUrl = `https://www.matainventive.com/cordovaserver/database/jsonmatacelladd.php?id=${id}`;
     const devices = await this.fetchData(devicesUrl).then(devicesData => devicesData);
+    const devicesDetailsUrl = this.createDevicesDetailsUrl(id);
+    const devicesDetails = await this.fetchData(devicesDetailsUrl).then(devsDetsData => devsDetsData);
 
-    const dataArr = await Promise.all([cells, devices]).then(data => {
-      return data[0].map(cell => {
+    const dataArr = await Promise.all([cells, devices, devicesDetails]).then(data => {
+      const cells = data[0];
+      const devices = data[1];
+      const devicesDetails = this.createDeviceObject(data[2]);
+      return cells.map(cell => {
         let dataObj = {};
         dataObj["cellName"] = cell.name;
-        const cellDevices = data[1].filter(device => device.cell_id === cell.cell_id);
+        let cellDevices = devices.filter(device => device.cell_id === cell.cell_id);
+        cellDevices = cellDevices.map(cellDev => {
+          const id = cellDev.device_id;
+          const devObj = devicesDetails[id];
+          const utilization = Math.round((parseInt(devObj.SumDayUpTime) / parseInt(devObj.SumONTimeSeconds)) * 100);
+          let status;
+          const maxOnTime = new Date().getTime() - new Date(devObj.MaxOnTime).getTime();
+          const maxEndTime = new Date().getTime() - new Date(devObj.MaxEndTime).getTime();
+          if (maxOnTime <= 600000) {
+            if (devObj.MaxEndTime <= devObj.MaxStartTime || maxEndTime <= 60000) {
+              status = "Online";
+            }
+          } else {
+            status = "Offline";
+          }
+          cellDev["utilization"] = utilization;
+          cellDev["status"] = status;
+          return cellDev;
+        })
         dataObj["devices"] = cellDevices;
         return dataObj;
       })
     })
 
     return dataArr;
+  }
+
+  createDeviceObject = devicesArr => {
+    if (devicesArr[0].some(devDet => devDet["RecordDate"] !== "1970/01/01")) {
+      devicesArr = devicesArr[0].filter(devDet => devDet["RecordDate"] !== "1970/01/01");
+    } else {
+      devicesArr = devicesArr[1];
+    }
+    let devicesObject = {};
+    devicesArr.forEach(devObj => {
+      let newDevObj = {};
+      let id;
+      Object.keys(devObj).forEach(key => {
+        if (key === "device_id") {
+          id = devObj[key];
+        } else {
+          newDevObj[key] = devObj[key];
+        }
+      });
+      devicesObject[id] = newDevObj;
+    })
+    return devicesObject;
   }
 
   logIn = id => {
