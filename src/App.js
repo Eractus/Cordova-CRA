@@ -30,149 +30,9 @@ export default class App extends Component {
     },
     cells: [],
     chats: {
-      Machines: {
-        "Machine 1": {
-          chatFirstBegan: "12:30 pm",
-          chatHistory: [
-            ["machine", "Job 37TEAXEDI87 is done."],
-            ["user", "Machine Utilization", 1565484493897],
-            ["machine", "90% of utilization."]
-          ],
-          responses: {
-            "Machine Utilization": "90% of utilization.",
-            "Machine Health": "As healthy as your grandparents.",
-            "Machine Status": "Code Red.",
-            "Machine Maintenance": "Maintenance mandatory."
-          }
-        },
-        "Eurotech 1": {
-          chatFirstBegan: "12:30 pm",
-          chatHistory: [
-            ["machine", "Job 57HXET89EEA is done."],
-            ["user", "Machine Utilization", 1565482493897],
-            ["machine", "80% of utilization."]
-          ],
-          responses: {
-            "Machine Utilization": "80% of utilization.",
-            "Machine Health": "A solid B+.",
-            "Machine Status": "Pretty solid.",
-            "Machine Maintenance": "Maintenance optional."
-          }
-        },
-        "Eurotech 2": {
-          chatFirstBegan: "12:30 pm",
-          chatHistory: [
-            ["machine", "Job 99AYYOT6653 is done."],
-            ["user", "Machine Utilization", 1565484453897],
-            ["machine", "70% of utilization."]
-          ],
-          responses: {
-            "Machine Utilization": "70% of utilization.",
-            "Machine Health": "Not bad, but not great.",
-            "Machine Status": "Don't worry about it, yet.",
-            "Machine Maintenance": "Maintenance recommended."
-          }
-        },
-        "Franz Cell 2": {
-          chatFirstBegan: "12:30 pm",
-          chatHistory: [
-            ["machine", "Job 12389HAAU89 is done."],
-            ["user", "Machine Utilization", 1565484775208],
-            ["machine", "60% of utilization."]
-          ],
-          responses: {
-            "Machine Utilization": "60% of utilization.",
-            "Machine Health": "Straight A's like an Asian.",
-            "Machine Status": "Strong as an ox.",
-            "Machine Maintenance": "Maintenance would be a waste of money."
-          }
-        }
-      },
-      Parts: {
-        "57HXET89EEA": {
-          chatFirstBegan: "12:30 pm",
-          chatHistory: [
-            ["machine", "Participation in Job 37TEAXEDI87 is done."],
-            ["user", "Part Utilization", 1565484493897],
-            ["machine", "90% of utilization."]
-          ],
-          responses: {
-            "Part Utilization": "90% of utilization.",
-            "Part Health": "As healthy as your grandparents.",
-            "Part Status": "Code Red.",
-            "Part Maintenance": "Maintenance mandatory."
-          }
-        },
-        "99AYYOT6653": {
-          chatFirstBegan: "12:30 pm",
-          chatHistory: [
-            ["machine", "Participation in Job 99AYYOT6653 is done."],
-            ["user", "Part Utilization", 1565484453897],
-            ["machine", "70% of utilization."]
-          ],
-          responses: {
-            "Part Utilization": "70% of utilization.",
-            "Part Health": "Not bad, but not great.",
-            "Part Status": "Don't worry about it, yet.",
-            "Part Maintenance": "Maintenance recommended."
-          }
-        },
-        "12389HAAU89": {
-          chatFirstBegan: "12:30 pm",
-          chatHistory: [
-            ["machine", "Participation in Job 12389HAAU89 is done."],
-            ["user", "Part Utilization", 1565484775208],
-            ["machine", "60% of utilization."]
-          ],
-          responses: {
-            "Part Utilization": "60% of utilization.",
-            "Part Health": "Straight A's like an Asian.",
-            "Part Status": "Strong as an ox.",
-            "Part Maintenance": "Maintenance would be a waste of money."
-          }
-        }
-      },
-      Jobs: {
-        "57HXET89EEA": {
-          chatFirstBegan: "12:30 pm",
-          chatHistory: [
-            ["machine", "Job 57HXET89EEA is done."],
-            ["user", "Job duration.", 1565484775208],
-            ["machine", "5 hours 18 minutes."]
-          ],
-          responses: {
-            "Job Duration": "5 hours 18 minutes.",
-            "Job Result": "Failure.",
-            "Job Notes": "Part 99AYYOT6653 failed 3 hours in."
-          }
-        },
-        "99AYYOT6653": {
-          chatFirstBegan: "12:30 pm",
-          chatHistory: [
-            ["machine", "Job 99AYYOT6653 is done."],
-            ["user", "Job duration.", 1565484775208],
-            ["machine", " 18 seconds."]
-          ],
-          responses: {
-            "Job Duration": "18 seconds.",
-            "Job Result": "Failure.",
-            "Job Notes": "Part 12389HAAU89 was dead on arrival."
-          }
-        },
-        "12389HAAU89": {
-          chatFirstBegan: "12:30 pm",
-          chatHistory: [
-            ["machine", "Job 12389HAAU89 is done."],
-            ["user", "Job duration.", 1565484775208],
-            ["machine", "8 hours."]
-          ],
-          responses: {
-            "Job Duration": "8 hours.",
-            "Job Result": "Success.",
-            "Job Notes": "Part 57HXET89EEA requires maintenance."
-          }
-        }
-      }
+      Machines: {},
+      Parts: {},
+      Jobs: {}
     },
     isLoading: true,
     machineSelected: null,
@@ -184,10 +44,12 @@ export default class App extends Component {
   componentDidMount = () => {
     const userData = localStorage.getItem("Mata Inventive");
     if (userData) {
-      this.loadData(JSON.parse(userData).ID).then(data => {
-        this.setState({ cells: data, isLoading: false })
-      });
+      this.logIn(JSON.parse(userData).ID);
     }
+  };
+
+  logIn = id => {
+    this.loadData(id).then(data => this.setState({ cells: data[0], chats: data[1], isLoading: false }));
   };
 
   fetchData = async url => {
@@ -222,12 +84,17 @@ export default class App extends Component {
     const devices = await this.fetchData(devicesUrl).then(devicesData => devicesData);
     const devicesDetailsUrl = this.createDevicesDetailsUrl(id);
     const devicesDetails = await this.fetchData(devicesDetailsUrl).then(devsDetsData => devsDetsData);
+    const jobsPartsUrl = `https://www.matainventive.com/cordovaserver/database/jsonmataparts.php?id=${id}`;
+    const jobsParts = await this.fetchData(jobsPartsUrl).then(jobsPartsData => jobsPartsData);
 
-    const dataArr = await Promise.all([cells, devices, devicesDetails]).then(data => {
+    const dataArr = await Promise.all([cells, devices, devicesDetails, jobsParts]).then(data => {
       const cells = data[0];
       const devices = data[1];
       const devicesDetails = this.createDeviceObject(data[2]);
-      return cells.map(cell => {
+      const jobsParts = data[3];
+
+      let chatObj = { Machines:{}, Parts:{}, Jobs:{} };
+      const cellsArr = cells.map(cell => {
         let dataObj = {};
         dataObj["cellName"] = cell.name;
         let cellDevices = devices.filter(device => device.cell_id === cell.cell_id);
@@ -239,19 +106,33 @@ export default class App extends Component {
           const maxOnTime = new Date().getTime() - new Date(devObj.MaxOnTime).getTime();
           const maxEndTime = new Date().getTime() - new Date(devObj.MaxEndTime).getTime();
           if (maxOnTime <= 600000) {
-            if (devObj.MaxEndTime <= devObj.MaxStartTime || maxEndTime <= 60000) {
+            // if (devObj.MaxEndTime <= devObj.MaxStartTime || maxEndTime <= 600000) {
               status = "Online";
-            }
+            // }
           } else {
             status = "Offline";
           }
+          chatObj.Machines[devObj.name] = { chatFirstBegan: "", chatHistory: [], responses: {"Machine Utilization": `${utilization}% of utilization.`, "Machine Status": status} }
           cellDev["utilization"] = utilization;
           cellDev["status"] = status;
           return cellDev;
         })
         dataObj["devices"] = cellDevices;
         return dataObj;
+      });
+
+      const latestJobPartDate = jobsParts[0].EditTime.slice(0, 10);
+      jobsParts.forEach(jobPart => {
+        const { EditTime: editTime, jobnumber, partnumber, partcount } = jobPart;
+        if (editTime.slice(0, 10) === latestJobPartDate) {
+          chatObj.Jobs[jobnumber] = { chatFirstBegan: "", chatHistory: [], responses: {"Start Time": editTime, "Part Number": partnumber, "Part Count": partcount} };
+          if (!chatObj.Parts[partnumber]) {
+            chatObj.Parts[partnumber] = { chatFirstBegan: "", chatHistory: [], responses: {"Start Time": editTime, "Job Number": jobnumber, "Part Count": partcount} };
+          }
+        }
       })
+
+      return [cellsArr, chatObj]
     })
 
     return dataArr;
@@ -278,10 +159,6 @@ export default class App extends Component {
     })
     return devicesObject;
   }
-
-  logIn = id => {
-    this.loadData(id).then(data => this.setState({ cells: data, isLoading: false }));
-  };
 
   // toggles between Overview and Floorplan views within Feed component based on toggled value from Footer component (currently removed)
   selectView = view => {
@@ -334,6 +211,11 @@ export default class App extends Component {
     this.toggleNavbarMenu("chat");
   };
 
+  setInitialTime = (type, chat, time) => {
+    let newChats = this.state.chats;
+    newChats[type][chat].chatFirstBegan = time;
+  }
+
   sendNewMessage = (type, chat, message) => {
     let newChats = this.state.chats;
     let newMessage = ["user", message, Date.now()];
@@ -343,17 +225,10 @@ export default class App extends Component {
   };
 
   machineReplyMessage = (type, chat, message) => {
-    const replies = [
-      "Error code 204, it's probably my fault.",
-      "Error code 404, it's probably your fault.",
-      "Error code 500, it's no one's fault. But I still have nothing for you."
-    ];
+    const errorReply = "Error code 404, aka something wrong with your input. Maybe try one of the presets?";
     let newChats = this.state.chats;
     let replyMessage = newChats[type][chat].responses[message];
-    // randomly samples a reply message from the replies array
-    replyMessage = replyMessage
-      ? replyMessage
-      : replies[Math.floor(Math.random() * replies.length)];
+    replyMessage = replyMessage ? replyMessage : errorReply;
     replyMessage = ["machine", replyMessage];
     newChats[type][chat].chatHistory.push(replyMessage);
     this.setState({ chats: newChats });
@@ -415,6 +290,7 @@ export default class App extends Component {
               chats={this.state.chats}
               displayChat={this.state.displayChat}
               displayProfile={this.state.displayProfile}
+              setInitialTime={this.setInitialTime}
               sendNewMessage={this.sendNewMessage}
               toggleNotification={this.toggleNotification}
               machineSelected={this.state.machineSelected}

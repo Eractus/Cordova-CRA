@@ -11,6 +11,7 @@ const Main = props => {
         <ChatItem
           chats={props.chats}
           displayChat={props.displayChat}
+          setInitialTime={props.setInitialTime}
           sendNewMessage={props.sendNewMessage}
         />
       );

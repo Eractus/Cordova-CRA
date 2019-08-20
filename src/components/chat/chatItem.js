@@ -39,6 +39,7 @@ export default class ChatItem extends Component {
         this.props.displayChat[1],
         this.state.message
       );
+      this.checkChatInitialTime();
       this.setState({ message: "" });
     }
   };
@@ -50,8 +51,23 @@ export default class ChatItem extends Component {
         this.props.displayChat[1],
         recom
       );
+      this.checkChatInitialTime();
     };
   };
+
+  checkChatInitialTime = () => {
+    if (!this.props.chats[this.props.displayChat[0]][this.props.displayChat[1]].chatFirstBegan) {
+      let currentTime = new Date();
+      let hour = currentTime.getHours();
+      let mins = currentTime.getMinutes();
+      mins = mins < 10 ? `0${mins}` : mins;
+      let amPM = hour >= 12 ? "pm" : "am";
+      hour = hour === 0 ? 12 : hour;
+      hour = hour > 12 ? hour - 12 : hour;
+      currentTime = `${hour}:${mins} ${amPM}`;
+      this.props.setInitialTime(this.props.displayChat[0], this.props.displayChat[1], currentTime)
+    }
+  }
 
   // using setTimeout with 0.15 of a second to allow enough time for the on blur effect to kick in after user has a chance to actually click a recommendation
   toggleRecommendations = type => {
