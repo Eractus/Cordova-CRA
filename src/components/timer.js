@@ -4,9 +4,9 @@ import _ from "lodash";
 
 export default class Timer extends Component {
   state = {
-    hour: null,
-    minute: null,
-    second: null,
+    hour: "0",
+    minute: "0",
+    second: "0",
     showConfirmation: false
   };
 
@@ -57,6 +57,9 @@ export default class Timer extends Component {
   handleStartTimer = () => {
     this.postTimerValues().then(res => {
       console.log(res);
+      const currState = this.state;
+      const { showConfirmation, ...timerVals } = currState;
+      this.props.setDeviceTimer(this.props.machine.cell_id, this.props.machine.device_id, timerVals);
       this.toggleConfirmation();
     })
   };

@@ -37,6 +37,7 @@ const Main = props => {
           <Machine
             machine={props.machineSelected}
             toggleMachineSelection={props.toggleMachineSelection}
+            setDeviceTimer={props.setDeviceTimer}
           />
         );
       }

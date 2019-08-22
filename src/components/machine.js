@@ -28,7 +28,7 @@ export default class Machine extends Component {
       case "Inspection":
         return <Inspection machine={this.props.machine} hideTask={this.hideTask} />;
       case "Timer":
-        return <Timer machine={this.props.machine} hideTask={this.hideTask} />;
+        return <Timer machine={this.props.machine} setDeviceTimer={this.props.setDeviceTimer} hideTask={this.hideTask} />;
       default:
         return "";
     }

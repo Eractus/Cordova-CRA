@@ -1,7 +1,7 @@
 import React from "react";
 
 const FeedItem = props => {
-  const { name, utilization, status } = props.machSpecs;
+  const { name, utilization, timer, status } = props.machSpecs;
 
   return (
     <div
@@ -28,14 +28,13 @@ const FeedItem = props => {
         >
           {utilization}% Utilization
         </p>
+        <p>
+          {timer}
+        </p>
       </div>
       <p>{status}</p>
     </div>
   );
 };
-
-// <p>
-//   {timer} Timer {status}
-// </p>
 
 export default FeedItem;

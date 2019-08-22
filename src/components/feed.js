@@ -4,7 +4,7 @@ import FeedItem from "./feedItem";
 export default class Feed extends Component {
   state = {
     // current cell stores index and the actual cell object - index will be used for selecting element by id
-    currentCell: [0, this.props.cells[0]],
+    currentCell: [0, this.props.cells[Object.keys(this.props.cells)[0]]],
     firstCellSelection: true
   };
 
@@ -23,7 +23,8 @@ export default class Feed extends Component {
   };
 
   renderCells = () => {
-    return this.props.cells.map((cell, idx) => {
+    return Object.keys(this.props.cells).map((cell, idx) => {
+      cell = this.props.cells[cell];
       // first cell when rendering component sets styling for blue border on the first cell
       const className =
         (this.state.firstCellSelection && idx === 0) || this.state.currentCell[0] === idx ? "cell selected" : "cell";
@@ -45,13 +46,16 @@ export default class Feed extends Component {
       <div className="feed-container">
         <header className="feed-cells-container">{this.renderCells()}</header>
         <section className="feed-items-container">
-          {this.state.currentCell[1].devices.map((machSpecs, idx) => (
-            <FeedItem
-              key={idx}
-              machSpecs={machSpecs}
-              toggleMachineSelection={this.props.toggleMachineSelection}
-            />
-          ))}
+          {Object.keys(this.state.currentCell[1].devices).map((machSpecs, idx) => {
+            machSpecs = this.state.currentCell[1].devices[machSpecs];
+            return (
+              <FeedItem
+                key={idx}
+                machSpecs={machSpecs}
+                toggleMachineSelection={this.props.toggleMachineSelection}
+              />
+            )
+          })}
         </section>
       </div>
     );

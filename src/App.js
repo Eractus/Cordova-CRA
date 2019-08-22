@@ -28,7 +28,7 @@ export default class App extends Component {
         }
       }
     },
-    cells: [],
+    cells: {},
     chats: {
       Machines: {},
       Parts: {},
@@ -79,6 +79,26 @@ export default class App extends Component {
     return timeVal = timeVal < 10 ? `0${timeVal}` : timeVal;
   }
 
+  // converts Date.now() milliseconds into the time, in the appropriate measurement, since the message was sent
+  timeConversion = millisec => {
+    const seconds = (millisec / 1000).toFixed(0);
+    const minutes = (millisec / (1000 * 60)).toFixed(0);
+    const hours = (millisec / (1000 * 60 * 60)).toFixed(0);
+    const days = (millisec / (1000 * 60 * 60 * 24)).toFixed(0);
+    if (seconds < 60) {
+      return seconds + " Sec";
+    } else if (minutes < 60) {
+      const mins = parseInt(minutes) === 1 ? " Min" : " Mins";
+      return minutes + mins;
+    } else if (hours < 24) {
+      const hrs = parseInt(hours) === 1 ? " Hr" : " Hrs";
+      return hours + hrs;
+    } else {
+      const ds = parseInt(days) === 1 ? " Day" : " Days";
+      return days + ds;
+    }
+  };
+
   loadData = async id => {
     const cellsUrl = `https://www.matainventive.com/cordovaserver/database/jsonmatacell.php?id=${id}`;
     const cells = await this.fetchData(cellsUrl).then(cellsData => cellsData);
@@ -88,26 +108,47 @@ export default class App extends Component {
     const devicesDetails = await this.fetchData(devicesDetailsUrl).then(devsDetsData => devsDetsData);
     const jobsPartsUrl = `https://www.matainventive.com/cordovaserver/database/jsonmataparts.php?id=${id}`;
     const jobsParts = await this.fetchData(jobsPartsUrl).then(jobsPartsData => jobsPartsData);
+    const timersUrl = `https://www.matainventive.com/cordovaserver/database/jsonmataSensor.php?id=${id}`;
+    const timers = await this.fetchData(timersUrl).then(timerData => timerData);
 
-    const dataArr = await Promise.all([cells, devices, devicesDetails, jobsParts]).then(data => {
+    const currentTime = Date.now();
+    const dataArr = await Promise.all([cells, devices, devicesDetails, jobsParts, timers]).then(data => {
       const cells = data[0];
       const devices = data[1];
       const devicesDetails = this.createDeviceObject(data[2]);
       const jobsParts = data[3];
+      const timers = this.createObjectWithIDKeys(data[4]);
 
+      let cellObj = {};
       let chatObj = { Machines:{}, Parts:{}, Jobs:{} };
-      const cellsArr = cells.map(cell => {
+      cells.forEach(cell => {
         let dataObj = {};
         dataObj["cellName"] = cell.name;
-        let cellDevices = devices.filter(device => device.cell_id === cell.cell_id);
-        cellDevices = cellDevices.map(cellDev => {
+        const cellDevices = devices.filter(device => device.cell_id === cell.cell_id);
+        let cellDevsObj = {};
+        cellDevices.forEach(cellDev => {
           const id = cellDev.device_id;
           const devObj = devicesDetails[id];
           let utilization = Math.round((parseInt(devObj.SumDayUpTime) / parseInt(devObj.SumONTimeSeconds)) * 100);
           utilization = utilization.toString() === "NaN" ? 0 : utilization;
+          cellDev["utilization"] = utilization;
+          let timer = "";
+          const devTimer = timers[id];
+          if (devTimer) {
+            const timerEndTime = new Date(devTimer.MaxEndTimeIdle).getTime();
+            const remaining = timerEndTime - currentTime;
+            if (remaining > 0) {
+              const timerRemaining = this.timeConversion(remaining);
+              timer = `${timerRemaining} Remain On Timer`;
+            } else if (remaining < 0 && this.formatTime(new Date(currentTime)).slice(0, 10) === this.formatTime(new Date(timerEndTime)).slice(0, 10)) {
+              const timerDuration = this.timeConversion(timerEndTime - new Date(devTimer.MaxStartTimeActive).getTime());
+              timer = `${timerDuration} Timer Finished`;
+            }
+          }
+          cellDev["timer"] = timer;
           let status;
-          const maxOnTime = new Date().getTime() - new Date(devObj.MaxOnTime).getTime();
-          const maxEndTime = new Date().getTime() - new Date(devObj.MaxEndTime).getTime();
+          const maxOnTime = currentTime - new Date(devObj.MaxOnTime).getTime();
+          const maxEndTime = currentTime - new Date(devObj.MaxEndTime).getTime();
           if (maxOnTime <= 600000) {
             // if (devObj.MaxEndTime <= devObj.MaxStartTime || maxEndTime <= 600000) {
               status = "Online";
@@ -115,13 +156,12 @@ export default class App extends Component {
           } else {
             status = "Offline";
           }
-          chatObj.Machines[devObj.name] = { chatHistory: { chatFirstBegan: "", chatLog: [] }, responses: {"Machine Utilization": `${utilization}% of utilization.`, "Machine Status": status} }
-          cellDev["utilization"] = utilization;
           cellDev["status"] = status;
-          return cellDev;
+          chatObj.Machines[devObj.name] = { chatHistory: { chatFirstBegan: "", chatLog: [] }, responses: {"Machine Utilization": `${utilization}% of utilization.`, "Machine Status": status} }
+          cellDevsObj[id] = cellDev;
         })
-        dataObj["devices"] = cellDevices;
-        return dataObj;
+        dataObj["devices"] = cellDevsObj;
+        cellObj[cell.cell_id] = dataObj
       });
 
       const latestJobPartDate = jobsParts[0].EditTime.slice(0, 10);
@@ -135,7 +175,7 @@ export default class App extends Component {
         }
       })
 
-      return [cellsArr, chatObj]
+      return [cellObj, chatObj]
     })
 
     return dataArr;
@@ -151,20 +191,24 @@ export default class App extends Component {
         devicesArr = devicesArr[0];
       }
     }
-    let devicesObject = {};
-    devicesArr.forEach(devObj => {
-      let newDevObj = {};
+    return this.createObjectWithIDKeys(devicesArr);
+  }
+
+  createObjectWithIDKeys = objectsArr => {
+    let outputObject = {};
+    objectsArr.forEach(obj => {
+      let newObj = {};
       let id;
-      Object.keys(devObj).forEach(key => {
+      Object.keys(obj).forEach(key => {
         if (key === "device_id") {
-          id = devObj[key];
+          id = obj[key];
         } else {
-          newDevObj[key] = devObj[key];
+          newObj[key] = obj[key];
         }
       });
-      devicesObject[id] = newDevObj;
+      outputObject[id] = newObj;
     })
-    return devicesObject;
+    return outputObject;
   }
 
   // toggles between Overview and Floorplan views within Feed component based on toggled value from Footer component (currently removed)
@@ -178,6 +222,16 @@ export default class App extends Component {
       this.setState({ machineSelected: machInfo });
     };
   };
+
+  setDeviceTimer = (cellId, deviceId, timerVals) => {
+    let newCells = Object.assign(this.state.cells, {});
+    const currentTime = Date.now();
+    const timerInMilliSeconds = ((parseInt(timerVals.hour)*3600) + (parseInt(timerVals.minute)*60) + parseInt(timerVals.second))*1000;
+    const timerTime = new Date(currentTime + timerInMilliSeconds).getTime();
+    const timerRemaining = this.timeConversion(timerTime - currentTime);
+    newCells[cellId].devices[deviceId].timer = `${timerRemaining} Remain On Timer`;
+    this.setState({ cells: newCells });
+  }
 
   // transition effects for chat submenu when clicking the navbar's left logo icon;
   // chat menu is positioned off of the viewport by an amount equal to its width until the logo icon is toggled, where it slides in as the app's Main component also slides off the viewport to the right by the same width.
@@ -322,6 +376,7 @@ export default class App extends Component {
               toggleNotification={this.toggleNotification}
               machineSelected={this.state.machineSelected}
               toggleMachineSelection={this.toggleMachineSelection}
+              setDeviceTimer={this.setDeviceTimer}
             />
           </div>
           <span id="profile" className="profile-wrapper">
