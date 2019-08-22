@@ -49,7 +49,9 @@ export default class App extends Component {
   };
 
   logIn = id => {
-    this.loadData(id).then(data => this.setState({ cells: data[0], chats: data[1], isLoading: false }));
+    this.loadData(id).then(data => {
+      this.setState({ cells: data[0], chats: data[1], isLoading: false })
+    });
   };
 
   fetchData = async url => {
@@ -101,7 +103,8 @@ export default class App extends Component {
         cellDevices = cellDevices.map(cellDev => {
           const id = cellDev.device_id;
           const devObj = devicesDetails[id];
-          const utilization = Math.round((parseInt(devObj.SumDayUpTime) / parseInt(devObj.SumONTimeSeconds)) * 100);
+          let utilization = Math.round((parseInt(devObj.SumDayUpTime) / parseInt(devObj.SumONTimeSeconds)) * 100);
+          utilization = utilization.toString() === "NaN" ? 0 : utilization;
           let status;
           const maxOnTime = new Date().getTime() - new Date(devObj.MaxOnTime).getTime();
           const maxEndTime = new Date().getTime() - new Date(devObj.MaxEndTime).getTime();
@@ -112,7 +115,7 @@ export default class App extends Component {
           } else {
             status = "Offline";
           }
-          chatObj.Machines[devObj.name] = { chatFirstBegan: "", chatHistory: [], responses: {"Machine Utilization": `${utilization}% of utilization.`, "Machine Status": status} }
+          chatObj.Machines[devObj.name] = { chatHistory: { chatFirstBegan: "", chatLog: [] }, responses: {"Machine Utilization": `${utilization}% of utilization.`, "Machine Status": status} }
           cellDev["utilization"] = utilization;
           cellDev["status"] = status;
           return cellDev;
@@ -125,9 +128,9 @@ export default class App extends Component {
       jobsParts.forEach(jobPart => {
         const { EditTime: editTime, jobnumber, partnumber, partcount } = jobPart;
         if (editTime.slice(0, 10) === latestJobPartDate) {
-          chatObj.Jobs[jobnumber] = { chatFirstBegan: "", chatHistory: [], responses: {"Start Time": editTime, "Part Number": partnumber, "Part Count": partcount} };
+          chatObj.Jobs[jobnumber] = { chatHistory: { chatFirstBegan: "", chatLog: [] }, responses: {"Start Time": editTime, "Part Number": partnumber, "Part Count": partcount} };
           if (!chatObj.Parts[partnumber]) {
-            chatObj.Parts[partnumber] = { chatFirstBegan: "", chatHistory: [], responses: {"Start Time": editTime, "Job Number": jobnumber, "Part Count": partcount} };
+            chatObj.Parts[partnumber] = { chatHistory: { chatFirstBegan: "", chatLog: [] }, responses: {"Start Time": editTime, "Job Number": jobnumber, "Part Count": partcount} };
           }
         }
       })
@@ -142,7 +145,11 @@ export default class App extends Component {
     if (devicesArr[0].some(devDet => devDet["RecordDate"] !== "1970/01/01")) {
       devicesArr = devicesArr[0].filter(devDet => devDet["RecordDate"] !== "1970/01/01");
     } else {
-      devicesArr = devicesArr[1];
+      if (devicesArr[1].length > 0) {
+        devicesArr = devicesArr[1];
+      } else {
+        devicesArr = devicesArr[0];
+      }
     }
     let devicesObject = {};
     devicesArr.forEach(devObj => {
@@ -213,13 +220,32 @@ export default class App extends Component {
 
   setInitialTime = (type, chat, time) => {
     let newChats = this.state.chats;
-    newChats[type][chat].chatFirstBegan = time;
+    newChats[type][chat].chatHistory.chatFirstBegan = time;
+    this.setState({ chats: newChats });
+  }
+
+  postNewMessages = async (type, chat) => {
+    const url = "https://www.matainventive.com/cordovaserver/database/insertchat.php";
+    console.log("history", JSON.stringify(this.state.chats[type][chat].chatHistory));
+    const data = {
+      userid: JSON.parse(localStorage.getItem("Mata Inventive")).ID,
+      type: chat,
+      chat_history: JSON.stringify(this.state.chats[type][chat].chatHistory)
+    }
+
+    fetch(url, {
+      method: 'POST',
+      body: "userid="+data.userid+"&type="+data.type+"&chat_history="+data.chat_history+"&insert=",
+      headers:{ 'Content-Type':'application/x-www-form-urlencoded' }
+    }).then(res => console.log(res))
+    .then(response => console.log('Success:', JSON.stringify(response)))
+    .catch(error => console.error('Error:', error));
   }
 
   sendNewMessage = (type, chat, message) => {
     let newChats = this.state.chats;
-    let newMessage = ["user", message, Date.now()];
-    newChats[type][chat].chatHistory.push(newMessage);
+    const newMessage = ["user", message, Date.now()];
+    newChats[type][chat].chatHistory.chatLog.push(newMessage);
     this.setState({ chats: newChats });
     this.machineReplyMessage(type, chat, message);
   };
@@ -230,8 +256,9 @@ export default class App extends Component {
     let replyMessage = newChats[type][chat].responses[message];
     replyMessage = replyMessage ? replyMessage : errorReply;
     replyMessage = ["machine", replyMessage];
-    newChats[type][chat].chatHistory.push(replyMessage);
+    newChats[type][chat].chatHistory.chatLog.push(replyMessage);
     this.setState({ chats: newChats });
+    this.postNewMessages(type, chat);
   };
 
   selectProfile = type => {
@@ -260,7 +287,7 @@ export default class App extends Component {
 
   render = () => {
     if (!localStorage.getItem("Mata Inventive")) {
-      return <Splash fetchData={this.fetchData} logIn={this.logIn} />;
+      return <Splash fetchData={this.fetchData} logIn={this.logIn} chats={this.state.chats}/>;
     } else {
       return (
         this.state.isLoading ? <div>Loading...</div> :

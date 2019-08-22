@@ -40,10 +40,49 @@ export default class Inspection extends Component {
     this.setState({ showConfirmation: !this.state.showConfirmation });
   };
 
+  saveInspection = async (type, count) => {
+    const url = "https://www.matainventive.com/cordovaserver/database/insertreport.php";
+    const data = {
+      userid: JSON.parse(localStorage.getItem("Mata Inventive")).ID,
+      deviceid: this.props.machine.device_id,
+      comment: type,
+      number: count
+    }
+
+    fetch(url, {
+      method: 'POST',
+      body: "userid="+data.userid+"&deviceid="+data.deviceid+"&comment="+data.comment+"&number="+data.number+"&insert=",
+      headers:{ 'Content-Type':'application/x-www-form-urlencoded' }
+    }).then(res => console.log(res))
+    .then(response => console.log('Success:', JSON.stringify(response)))
+    .catch(error => console.error('Error:', error));
+  }
+
+  postAllInspections = async () => {
+    const types = Object.keys(this.state);
+    let insps = [];
+    for (let i=0; i<types.length; i++) {
+      const type = types[i];
+      if (type !== "showConfirmation") {
+        const count = this.state[type];
+        const insp = await this.saveInspection(type, count);
+        insps.push(insp);
+      }
+    }
+
+    const allInspsRes = await Promise.all(insps).then(res => {
+      console.log("pAll", res);
+    })
+    return allInspsRes;
+  }
+
   handleSubmit = e => {
     e.preventDefault();
 
-    this.toggleConfirmation();
+    this.postAllInspections().then(res => {
+      console.log("res", res);
+      this.toggleConfirmation();
+    })
   };
 
   renderTask = () => {

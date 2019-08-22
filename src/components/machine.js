@@ -22,13 +22,13 @@ export default class Machine extends Component {
   renderTask = () => {
     switch (this.state.selectedTask) {
       case "Start Job":
-        return <StartJob hideTask={this.hideTask} />;
+        return <StartJob machine={this.props.machine} hideTask={this.hideTask} />;
       case "Preparation Checklist":
-        return <PreparationChecklist hideTask={this.hideTask} />;
+        return <PreparationChecklist machine={this.props.machine} hideTask={this.hideTask} />;
       case "Inspection":
-        return <Inspection hideTask={this.hideTask} />;
+        return <Inspection machine={this.props.machine} hideTask={this.hideTask} />;
       case "Timer":
-        return <Timer hideTask={this.hideTask} />;
+        return <Timer machine={this.props.machine} hideTask={this.hideTask} />;
       default:
         return "";
     }
@@ -52,7 +52,7 @@ export default class Machine extends Component {
             &lsaquo;
           </span>
           <h1 className="machine-name">
-            {this.props.machine.type} {this.props.machine.id}
+            {this.props.machine.name}
           </h1>
         </div>
         <img src="./assets/machine.png" alt="MachinePNG" />

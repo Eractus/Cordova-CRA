@@ -50,8 +50,35 @@ export default class PreparationChecklist extends Component {
     this.setState({ showConfirmation: !this.state.showConfirmation });
   };
 
+  saveChecklistValues = async () => {
+    const url = "https://www.matainventive.com/cordovaserver/database/insertprepall.php";
+    const data = {
+      userid: JSON.parse(localStorage.getItem("Mata Inventive")).ID,
+      deviceid: this.props.machine.device_id,
+      prepspec: this.state.cells.Preparation["Job Spec Confirmation"],
+      prepcad: this.state.cells.Preparation["Revise CAD Modeling"],
+      preppath: this.state.cells.Preparation["Edit Toolpath"],
+      prepoffset: this.state.cells.Machining["Tool Offset"],
+      prepclean: this.state.cells.Machining["Clean Chamber"],
+      partnumber: "",
+      jobnumber: "",
+      inspection: this.state.cells.Machining["Inspection Room"]
+    }
+
+    fetch(url, {
+      method: 'POST',
+      body: "userid="+data.userid+"&deviceid="+data.deviceid+"&prepspec="+data.prepspec+"&prepcad="+data.prepcad+"&preppath="+data.preppath+"&prepoffset="+data.prepoffset+"&prepclean="+data.prepclean+"&partnumber="+data.partnumber+"&jobnumber="+data.jobnumber+"&inspection="+data.inspection+"&insert=",
+      headers:{ 'Content-Type':'application/x-www-form-urlencoded' }
+    }).then(res => console.log(res))
+    .then(response => console.log('Success:', JSON.stringify(response)))
+    .catch(error => console.error('Error:', error));
+  }
+
   handleSaveChecklist = () => {
-    this.toggleConfirmation();
+    this.saveChecklistValues().then(res => {
+      console.log(res);
+      this.toggleConfirmation();
+    })
   };
 
   toggleChecklist = checkList => {
@@ -63,16 +90,38 @@ export default class PreparationChecklist extends Component {
     };
   };
 
+  postNote = async () => {
+    const url = "https://www.matainventive.com/cordovaserver/database/insertnote.php";
+    const data = {
+      userid: JSON.parse(localStorage.getItem("Mata Inventive")).ID,
+      deviceid: this.props.machine.device_id,
+      note: this.state.cells.Note,
+      partnumber: "",
+      jobnumber: "",
+    }
+
+    fetch(url, {
+      method: 'POST',
+      body: "userid="+data.userid+"&deviceid="+data.deviceid+"&note="+data.note+"&partnumber="+data.partnumber+"&jobnumber="+data.jobnumbernote+"&insert=",
+      headers:{ 'Content-Type':'application/x-www-form-urlencoded' }
+    }).then(res => console.log(res))
+    .then(response => console.log('Success:', JSON.stringify(response)))
+    .catch(error => console.error('Error:', error));
+  }
+
   // after saving Note, switch back to the previous cell view that the user was at before displaying Note
   saveNote = () => {
-    this.setState({
-      cellSelected: this.state.prevCell,
-      prevCell: null,
-      prevNote: this.state.cells.Note
-    });
-    document.getElementById(this.state.cellSelected).className = "cell";
-    document.getElementById(this.state.prevCell).className = "cell selected";
-    this.toggleNote();
+    this.postNote().then(res => {
+      console.log(res);
+      document.getElementById(this.state.cellSelected).className = "cell";
+      document.getElementById(this.state.prevCell).className = "cell selected";
+      this.setState({
+        cellSelected: this.state.prevCell,
+        prevCell: null,
+        prevNote: this.state.cells.Note
+      });
+      this.toggleNote();
+    })
   };
 
   // similar logic to save note, but uses a previously saved value to switch the value back to it so as not to save any updates the user may have
@@ -150,7 +199,7 @@ export default class PreparationChecklist extends Component {
       return (
         <div>
           <div className="preparation-checklist-container">
-            <h4>Start Job</h4>
+            <h4>Start Prep</h4>
             <header className="preparation-checklist-cells-container">
               {this.renderCells()}
             </header>

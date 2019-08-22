@@ -29,40 +29,43 @@ export default class Notifications extends Component {
                 toggleNotification={this.props.toggleNotification}
               />
             );
-          } else {
+          // } else {
             // if it's for do not disturb, there's a more elaborate JSX layout on top of a ToggleInput functional component, including two CollapseInput functional components.
-            return (
-              <div key={idx} className="notifications-do-not-disturb-container">
-                <p>{notif}</p>
-                <ToggleInput
-                  notification="Scheduled"
-                  toggled={notifications[notif].on}
-                  toggleNotification={this.props.toggleNotification}
-                />
-                <div style={{display: notifications[notif].on ? "initial" : "none"}}>
-                {Object.keys(notifications[notif]).map((dndField, idx) => {
-                  if (dndField !== "on") {
-                    const showTimer = dndField === "From" ? this.state.showFromTimer : this.state.showToTimer;
-                    return (
-                      <CollapseInput
-                        key={idx}
-                        inputName={dndField}
-                        collapseInput={showTimer}
-                        toggleInput={this.toggleTimer}
-                        hasTimer={true}
-                      />
-                    );
-                  }
-                })}
-                </div>
-              </div>
-            );
+
           }
         })}
       </div>
     );
   };
 }
+
+// this block goes into line 34 when we want to activate Do Not Disturb again
+// return (
+//   <div key={idx} className="notifications-do-not-disturb-container">
+//     <p>{notif}</p>
+//     <ToggleInput
+//       notification="Scheduled"
+//       toggled={notifications[notif].on}
+//       toggleNotification={this.props.toggleNotification}
+//     />
+//     <div style={{display: notifications[notif].on ? "initial" : "none"}}>
+//     {Object.keys(notifications[notif]).map((dndField, idx) => {
+//       if (dndField !== "on") {
+//         const showTimer = dndField === "From" ? this.state.showFromTimer : this.state.showToTimer;
+//         return (
+//           <CollapseInput
+//             key={idx}
+//             inputName={dndField}
+//             collapseInput={showTimer}
+//             toggleInput={this.toggleTimer}
+//             hasTimer={true}
+//           />
+//         );
+//       }
+//     })}
+//     </div>
+//   </div>
+// );
 
 const ToggleInput = props => {
   // various class name and other values change based on App component's current state value for notification and other related pointers

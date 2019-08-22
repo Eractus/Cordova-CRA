@@ -605,6 +605,10 @@ h1, h4, h5 {
   color: var(--active-blue);
 }
 
+.settings-link:hover {
+  text-decoration: underline;
+}
+
 .support-container {
   display: flex;
   flex-direction: column;
@@ -807,8 +811,7 @@ h1, h4, h5 {
   align-items: center;
   position: relative;
   margin: 10px;
-  padding-top: 5px;
-  padding-bottom: 15px;
+  padding: 15px 0;
   border-radius: 5px;
   cursor: pointer;
 }
@@ -867,19 +870,13 @@ h1, h4, h5 {
   align-items: center;
 }
 
-.machine-back {
-  margin-right: calc(50vw - 95px);
-  font-size: 50px;
-  font-weight: 200;
-  line-height: 38px;
-  cursor: pointer
-}
-
 .machine-name {
   color: var(--title-grey);
+  width: 150px;
   font-size: 28px;
   line-height: 38px;
-  text-align: center;
+  display: flex;
+  justify-content: center;
 }
 
 .machine-buttons-container {
@@ -1388,7 +1385,7 @@ h1, h4, h5 {
 }
 
 .back-icon.machine {
-  margin-right: calc(50vw - 95px);
+  margin-right: calc(50vw - 108px);
 }
 
 .back-icon.profile {
@@ -1410,6 +1407,10 @@ h1, h4, h5 {
   font-weight: 400;
   margin-top: 25px;
   cursor: pointer;
+}
+
+.back-icon.profile > p:hover {
+  text-decoration: underline;
 }
 
 .button-flex-end-wrapper {

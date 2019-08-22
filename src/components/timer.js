@@ -14,8 +14,51 @@ export default class Timer extends Component {
     this.setState({ showConfirmation: !this.state.showConfirmation });
   };
 
+  formatTime = date => {
+    const year = date.getFullYear();
+    const month = this.formatSingleDigit(date.getMonth() + 1);
+    const day = this.formatSingleDigit(date.getDate());
+    const hour = this.formatSingleDigit(date.getHours());
+    const min = this.formatSingleDigit(date.getMinutes());
+    const sec = this.formatSingleDigit(date.getSeconds());
+
+    return `${year}-${month}-${day}T${hour}:${min}:${sec}`;
+  }
+
+  formatSingleDigit = timeVal => {
+    return timeVal = timeVal < 10 ? `0${timeVal}` : timeVal;
+  }
+
+  postTimerValues = async () => {
+    const url = "https://www.matainventive.com/cordovaserver/database/inserttimestart.php";
+    const currentDate = new Date();
+    const today = this.formatTime(currentDate);
+    const currentDateGMT = new Date(currentDate.getTime() + (currentDate.getTimezoneOffset() * 60000));
+    const todayserver = this.formatTime(currentDateGMT);
+    const data = {
+      userid: JSON.parse(localStorage.getItem("Mata Inventive")).ID,
+      deviceid: this.props.machine.device_id,
+      hour: this.state.hour,
+      minute: this.state.minute,
+      second: this.state.second,
+      today: today,
+      todayserver: todayserver
+    }
+
+    fetch(url, {
+      method: 'POST',
+      body: "userid="+data.userid+"&deviceid="+data.deviceid+"&hour="+data.hour+"&minute="+data.minute+"&second="+data.second+"&today="+data.today+"&todayserver="+data.todayserver+"&insert=",
+      headers:{ 'Content-Type':'application/x-www-form-urlencoded' }
+    }).then(res => console.log(res))
+    .then(response => console.log('Success:', JSON.stringify(response)))
+    .catch(error => console.error('Error:', error));
+  }
+
   handleStartTimer = () => {
-    this.toggleConfirmation();
+    this.postTimerValues().then(res => {
+      console.log(res);
+      this.toggleConfirmation();
+    })
   };
 
   updateTimerValue = field => {

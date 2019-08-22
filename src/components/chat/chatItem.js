@@ -34,29 +34,29 @@ export default class ChatItem extends Component {
     e.preventDefault();
 
     if (this.state.message.trim() !== "") {
+      this.checkChatInitialTime();
       this.props.sendNewMessage(
         this.props.displayChat[0],
         this.props.displayChat[1],
         this.state.message
       );
-      this.checkChatInitialTime();
       this.setState({ message: "" });
     }
   };
 
   sendRecommendationAsMessage = recom => {
     return () => {
+      this.checkChatInitialTime();
       this.props.sendNewMessage(
         this.props.displayChat[0],
         this.props.displayChat[1],
         recom
       );
-      this.checkChatInitialTime();
     };
   };
 
   checkChatInitialTime = () => {
-    if (!this.props.chats[this.props.displayChat[0]][this.props.displayChat[1]].chatFirstBegan) {
+    if (!this.props.chats[this.props.displayChat[0]][this.props.displayChat[1]].chatHistory.chatFirstBegan) {
       let currentTime = new Date();
       let hour = currentTime.getHours();
       let mins = currentTime.getMinutes();
@@ -96,9 +96,9 @@ export default class ChatItem extends Component {
 
     return (
       <div className="chat-item-container">
-        <h5>{chatItem.chatFirstBegan}</h5>
+        <h5>{chatItem.chatHistory.chatFirstBegan}</h5>
         <section id="messages" className="chat-item-messages-container">
-          {chatItem.chatHistory.map((chat, idx) => {
+          {chatItem.chatHistory.chatLog.map((chat, idx) => {
             const machImg =
               chat[0] === "machine" ? (
                 <img src="./assets/machine.png" alt="MachIcon" />

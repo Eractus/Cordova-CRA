@@ -77,9 +77,44 @@ export default class StartJob extends Component {
     };
   };
 
+  insertJob = async idx => {
+    const url = "https://www.matainventive.com/cordovaserver/database/insertjob.php";
+    const data = {
+      userid: JSON.parse(localStorage.getItem("Mata Inventive")).ID,
+      deviceid: this.props.machine.device_id,
+      jobnumber: this.state.jobs[idx].inputValues.jobNumber,
+      partnumber: this.state.jobs[idx].inputValues.partNumber,
+      partcount: this.state.jobs[idx].inputValues.partCount
+    }
+
+    fetch(url, {
+      method: 'POST',
+      body: "userid="+data.userid+"&deviceid="+data.deviceid+"&jobnumber="+data.jobnumber+"&partnumber="+data.partnumber+"&partcount="+data.partcount.toString()+"&insert=",
+      headers:{ 'Content-Type':'application/x-www-form-urlencoded' }
+    }).then(res => console.log(res))
+    .then(response => console.log('Success:', JSON.stringify(response)))
+    .catch(error => console.error('Error:', error));
+  }
+
+  postAllJobs = async () => {
+    let jobs = [];
+    for (let i=0; i<this.state.jobs.length; i++) {
+      const job = await this.insertJob(i);
+      jobs.push(job);
+    }
+
+    const allJobsRes = await Promise.all(jobs).then(res => {
+      console.log("pAll", res);
+    })
+    return allJobsRes;
+  }
+
   handleSubmit = () => {
     if (this.hasNoEmptyCards()) {
-      this.toggleConfirmation();
+      this.postAllJobs().then(res => {
+        console.log("res", res);
+        this.toggleConfirmation();
+      })
     } else {
       this.toggleEmptyCardModal();
     }
