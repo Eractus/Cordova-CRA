@@ -53,7 +53,6 @@ export default class App extends Component {
   };
 
   countDownTimers = () => {
-    console.log("here");
     let timers = [];
     const cells = Object.keys(this.state.cells);
     for (let i=0; i<cells.length; i++) {
@@ -169,16 +168,22 @@ export default class App extends Component {
     const devicesDetails = await this.fetchData(devicesDetailsUrl).then(devsDetsData => devsDetsData);
     const jobsPartsUrl = `https://www.matainventive.com/cordovaserver/database/jsonmataparts.php?id=${id}`;
     const jobsParts = await this.fetchData(jobsPartsUrl).then(jobsPartsData => jobsPartsData);
+    const prepChecklistsUrl = `https://www.matainventive.com/cordovaserver/database/jsonmataPrepAll.php?id=${id}`;
+    const prepChecklists = await this.fetchData(prepChecklistsUrl).then(prepChecklistData => prepChecklistData);
+    const prepNotesUrl = `https://www.matainventive.com/cordovaserver/database/jsonmatanotes.php?id=${id}`;
+    const prepNotes = await this.fetchData(prepNotesUrl).then(prepNotesData => prepNotesData);
     const timersUrl = `https://www.matainventive.com/cordovaserver/database/jsonmataSensor.php?id=${id}`;
     const timers = await this.fetchData(timersUrl).then(timerData => timerData);
 
     const currentTime = Date.now();
-    const dataArr = await Promise.all([cells, devices, devicesDetails, jobsParts, timers]).then(data => {
+    const dataArr = await Promise.all([cells, devices, devicesDetails, jobsParts, timers, prepChecklists, prepNotes]).then(data => {
       const cells = data[0];
       const devices = data[1];
       const devicesDetails = this.createDeviceObject(data[2]);
       const jobsParts = data[3];
       const timers = this.createObjectWithIDKeys(data[4]);
+      const prepChecklists = this.createObjectWithIDKeys(data[5]);
+      const prepNotes = this.createObjectWithIDKeys(data[6]);
 
       let cellObj = {};
       let chatObj = { Machines:{}, Parts:{}, Jobs:{} };
@@ -220,6 +225,26 @@ export default class App extends Component {
             status = "Offline";
           }
           cellDev["status"] = status;
+          let prepChecklistObj = {
+            "speccheck":false,
+            "cadwork":false,
+            "toolpath":false,
+            "offset":false,
+            "clean":false,
+            "inspection":false
+          };
+          const prepChk = prepChecklists[id];
+          if (prepChk) {
+            prepChecklistObj = prepChk;
+          }
+          let notes = "";
+          const prepNote = prepNotes[id];
+          if (prepNote) {
+            notes = prepNote.note;
+          }
+          prepChecklistObj.notes = notes;
+          cellDev["prepChecklist"] = prepChecklistObj;
+
           chatObj.Machines[devObj.name] = { chatHistory: { chatFirstBegan: "", chatLog: [] }, responses: {"Machine Utilization": `${utilization}% of utilization.`, "Machine Status": status} }
           cellDevsObj[id] = cellDev;
         })
@@ -269,7 +294,9 @@ export default class App extends Component {
           newObj[key] = obj[key];
         }
       });
-      outputObject[id] = newObj;
+      if (!outputObject[id]) {
+        outputObject[id] = newObj;
+      }
     })
     return outputObject;
   }
@@ -286,7 +313,32 @@ export default class App extends Component {
     };
   };
 
-  setDeviceTimer = async (cellId, deviceId, dateString) => {
+  savePrepChecklists = (cellId, deviceId, prepChecklists) => {
+    const prepChkDict = {
+      "Clean Chamber": "clean",
+      "Tool Offset": "offset",
+      "Inspection Room": "inspection",
+      "Job Spec Confirmation": "speccheck",
+      "Revise CAD Modeling": "cadwork",
+      "Edit Toolpath": "toolpath"
+    }
+    let newCells = Object.assign(this.state.cells, {});
+    Object.keys(prepChecklists).forEach(type => {
+      if (type === "Note") {
+        newCells[cellId].devices[deviceId].prepChecklist.notes = prepChecklists[type];
+      } else {
+        const typeObj = prepChecklists[type];
+        Object.keys(typeObj).forEach(prepChk => {
+          const prckBool = prepChecklists[type][prepChk];
+          const converted = prepChkDict[prepChk];
+          newCells[cellId].devices[deviceId].prepChecklist[converted] = prckBool;
+        })
+      }
+    })
+    this.setState({ cells: newCells });
+  }
+
+  setDeviceTimer = (cellId, deviceId, dateString) => {
     let newCells = Object.assign(this.state.cells, {});
     const timerTime = new Date(dateString).getTime();
     const timerRemaining = this.timeConversion(timerTime, true);
@@ -437,6 +489,7 @@ export default class App extends Component {
               toggleNotification={this.toggleNotification}
               machineSelected={this.state.machineSelected}
               toggleMachineSelection={this.toggleMachineSelection}
+              savePrepChecklists={this.savePrepChecklists}
               setDeviceTimer={this.setDeviceTimer}
             />
           </div>

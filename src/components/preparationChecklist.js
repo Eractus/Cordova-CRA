@@ -24,6 +24,42 @@ export default class PreparationChecklist extends Component {
     showConfirmation: false
   };
 
+  componentDidMount = () => {
+    const prepChkDict = {
+      "clean": ["Machining", "Clean Chamber"],
+      "offset": ["Machining", "Tool Offset"],
+      "inspection": ["Machining", "Inspection Room"],
+      "speccheck": ["Preparation", "Job Spec Confirmation"],
+      "cadwork": ["Preparation", "Revise CAD Modeling"],
+      "toolpath": ["Preparation", "Edit Toolpath"]
+    }
+
+    let prepChecklistObj = { Machining: {}, Preparation:{} };
+    Object.keys(this.props.machine.prepChecklist).forEach(prepType => {
+      let prepVal = this.props.machine.prepChecklist[prepType]
+      if (prepType === "notes") {
+        prepChecklistObj.Note = prepVal;
+      } else {
+        prepVal = this.handleEmptyString(prepVal);
+        const stateKeys = prepChkDict[prepType];
+        prepChecklistObj[stateKeys[0]][stateKeys[1]] = prepVal;
+      }
+    })
+    this.setState({ cells: prepChecklistObj, prevNote: prepChecklistObj.Note });
+  }
+
+  handleEmptyString = str => {
+    if (typeof str === "string") {
+      if (str === "false") {
+        return JSON.parse(str);
+      } else {
+        return str;
+      }
+    } else {
+      return str;
+    }
+  }
+
   selectCell = cell => {
     return () => {
       if (this.state.firstCellSelection) {
@@ -77,6 +113,7 @@ export default class PreparationChecklist extends Component {
   handleSaveChecklist = () => {
     this.saveChecklistValues().then(res => {
       console.log(res);
+      this.props.savePrepChecklists(this.props.machine.cell_id, this.props.machine.device_id, this.state)
       this.toggleConfirmation();
     })
   };

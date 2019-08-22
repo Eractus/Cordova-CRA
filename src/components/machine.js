@@ -24,7 +24,7 @@ export default class Machine extends Component {
       case "Start Job":
         return <StartJob machine={this.props.machine} hideTask={this.hideTask} />;
       case "Preparation Checklist":
-        return <PreparationChecklist machine={this.props.machine} hideTask={this.hideTask} />;
+        return <PreparationChecklist machine={this.props.machine} savePrepChecklists={this.props.savePrepChecklists} hideTask={this.hideTask} />;
       case "Inspection":
         return <Inspection machine={this.props.machine} hideTask={this.hideTask} />;
       case "Timer":
