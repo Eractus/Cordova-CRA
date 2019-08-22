@@ -41,17 +41,70 @@ export default class App extends Component {
     displayProfile: null
   };
 
+  countDown = 0;
+
   componentDidMount = () => {
     const userData = localStorage.getItem("Mata Inventive");
     if (userData) {
-      this.logIn(JSON.parse(userData).ID);
+      this.logIn(JSON.parse(userData).ID).then(res => {
+        this.countDownTimers();
+      });
     }
   };
 
-  logIn = id => {
-    this.loadData(id).then(data => {
+  countDownTimers = () => {
+    console.log("here");
+    let timers = [];
+    const cells = Object.keys(this.state.cells);
+    for (let i=0; i<cells.length; i++) {
+      const cell = this.state.cells[cells[i]];
+      const devices = Object.keys(cell.devices);
+      for (let j=0; j<devices.length; j++) {
+        const device = this.state.cells[cells[i]].devices[devices[j]];
+        const timer = device.timer;
+        timers.push(timer);
+      }
+    }
+    if (this.countDown === 0 && timers.some(timer => timer.includes("Remain"))) {
+      this.countDown = setInterval(this.countDownTimer, 1000);
+    }
+  }
+
+  countDownTimer = () => {
+    let newCells = Object.assign(this.state.cells, {});
+    const cells = Object.keys(newCells);
+    let timers = [];
+    for (let i=0; i<cells.length; i++) {
+      const cell = newCells[cells[i]];
+      const devices = Object.keys(cell.devices);
+      for (let j=0; j<devices.length; j++) {
+        const device = newCells[cells[i]].devices[devices[j]];
+        const currentTime = Date.now();
+        const timerEndTime = new Date(device.timerEnd).getTime();
+        const remaining = timerEndTime - currentTime;
+        let timer;
+        if (remaining > 0) {
+          const timerRemaining = this.timeConversion(remaining, true);
+          timer = `${timerRemaining} Remain On Timer`;
+        } else if (remaining < 0 && this.formatTime(new Date(currentTime)).slice(0, 10) === this.formatTime(new Date(timerEndTime)).slice(0, 10)) {
+          const timerDuration = this.timeConversion(timerEndTime - (new Date(device.timerStart)).getTime(), false);
+          timer = `${timerDuration} Timer Finished`;
+        }
+        newCells[cells[i]].devices[devices[j]].timer = timer;
+        timers.push(timer);
+      }
+    }
+    this.setState({ cells: newCells });
+    if (timers.every(timer => timer.includes("Finished"))) {
+      clearInterval(this.countdown);
+    }
+  }
+
+  logIn = async id => {
+    const configState = await this.loadData(id).then(data => {
       this.setState({ cells: data[0], chats: data[1], isLoading: false })
     });
+    return configState;
   };
 
   fetchData = async url => {
@@ -80,22 +133,30 @@ export default class App extends Component {
   }
 
   // converts Date.now() milliseconds into the time, in the appropriate measurement, since the message was sent
-  timeConversion = millisec => {
-    const seconds = (millisec / 1000).toFixed(0);
-    const minutes = (millisec / (1000 * 60)).toFixed(0);
-    const hours = (millisec / (1000 * 60 * 60)).toFixed(0);
-    const days = (millisec / (1000 * 60 * 60 * 24)).toFixed(0);
-    if (seconds < 60) {
-      return seconds + " Sec";
-    } else if (minutes < 60) {
-      const mins = parseInt(minutes) === 1 ? " Min" : " Mins";
-      return minutes + mins;
-    } else if (hours < 24) {
-      const hrs = parseInt(hours) === 1 ? " Hr" : " Hrs";
-      return hours + hrs;
+  timeConversion = (millisec, bool) => {
+    if (bool) {
+      let seconds = Math.ceil(millisec / 1000);
+      const hours = Math.floor( seconds / 3600 );
+      seconds = seconds % 3600;
+      const minutes = Math.floor( seconds / 60 );
+      seconds = seconds % 60;
+      let sec = seconds > 0 ? `${seconds}Sec`: `0Sec`;
+      let mins = minutes > 0 ? `${minutes}Min `: `0Min `;
+      let hrs = hours > 0 ? `${hours}Hr `: `0Hr `;
+      return `${hrs}${mins}${sec}`;
     } else {
-      const ds = parseInt(days) === 1 ? " Day" : " Days";
-      return days + ds;
+      const seconds = (millisec / 1000).toFixed(0);
+      const minutes = (millisec / (1000 * 60)).toFixed(0);
+      const hours = (millisec / (1000 * 60 * 60)).toFixed(0);
+      if (seconds < 60) {
+        return seconds + " Sec";
+      } else if (minutes < 60) {
+        const mins = parseInt(minutes) === 1 ? " Min" : " Mins";
+        return minutes + mins;
+      } else if (hours < 24) {
+        const hrs = parseInt(hours) === 1 ? " Hr" : " Hrs";
+        return hours + hrs;
+      }
     }
   };
 
@@ -135,13 +196,15 @@ export default class App extends Component {
           let timer = "";
           const devTimer = timers[id];
           if (devTimer) {
+            cellDev["timerEnd"] = devTimer.MaxEndTimeIdle;
+            cellDev["timerStart"] = devTimer.MaxStartTimeActive;
             const timerEndTime = new Date(devTimer.MaxEndTimeIdle).getTime();
             const remaining = timerEndTime - currentTime;
             if (remaining > 0) {
-              const timerRemaining = this.timeConversion(remaining);
+              const timerRemaining = this.timeConversion(remaining, true);
               timer = `${timerRemaining} Remain On Timer`;
             } else if (remaining < 0 && this.formatTime(new Date(currentTime)).slice(0, 10) === this.formatTime(new Date(timerEndTime)).slice(0, 10)) {
-              const timerDuration = this.timeConversion(timerEndTime - new Date(devTimer.MaxStartTimeActive).getTime());
+              const timerDuration = this.timeConversion(timerEndTime - (new Date(devTimer.MaxStartTimeActive)).getTime(), false);
               timer = `${timerDuration} Timer Finished`;
             }
           }
@@ -223,12 +286,10 @@ export default class App extends Component {
     };
   };
 
-  setDeviceTimer = (cellId, deviceId, timerVals) => {
+  setDeviceTimer = async (cellId, deviceId, dateString) => {
     let newCells = Object.assign(this.state.cells, {});
-    const currentTime = Date.now();
-    const timerInMilliSeconds = ((parseInt(timerVals.hour)*3600) + (parseInt(timerVals.minute)*60) + parseInt(timerVals.second))*1000;
-    const timerTime = new Date(currentTime + timerInMilliSeconds).getTime();
-    const timerRemaining = this.timeConversion(timerTime - currentTime);
+    const timerTime = new Date(dateString).getTime();
+    const timerRemaining = this.timeConversion(timerTime, true);
     newCells[cellId].devices[deviceId].timer = `${timerRemaining} Remain On Timer`;
     this.setState({ cells: newCells });
   }

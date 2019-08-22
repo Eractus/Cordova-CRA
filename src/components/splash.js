@@ -35,8 +35,9 @@ export default class Splash extends Component {
       const url = `https://www.matainventive.com/wp-json/custom-plugin/login?username=${this.state.Username}&password=${this.state.Password}`;
       this.props.fetchData(url).then(data => {
         if (data) {
-          localStorage.setItem('Mata Inventive', JSON.stringify(data.data));
-          this.props.logIn(data.data.ID);
+          this.props.logIn(data.data.ID).then(res => {
+            localStorage.setItem('Mata Inventive', JSON.stringify(data.data));
+          });
         } else {
           this.setState({ loginErrors: "Username or Password is incorrect." })
         }
