@@ -9,7 +9,10 @@ import "./App.css";
 export default class App extends Component {
   state = {
     user: {
-      name: "Awesome Machinist",
+      "ID": "",
+      user_email: "",
+      first_name: "",
+      last_name:"",
       notifications: {
         Text: true,
         Email: false,
@@ -93,15 +96,17 @@ export default class App extends Component {
         timers.push(timer);
       }
     }
-    this.setState({ cells: newCells });
+    this.setState(prevState => ({
+      cells: Object.assign(prevState.cells, newCells)
+    }));
     if (timers.every(timer => timer.includes("Finished"))) {
-      clearInterval(this.countdown);
+      clearInterval(this.countDown);
     }
   }
 
   logIn = async id => {
     const configState = await this.loadData(id).then(data => {
-      this.setState({ cells: data[0], chats: data[1], isLoading: false })
+      this.setState({ user: data[0], cells: data[1], chats: data[2], isLoading: false })
     });
     return configState;
   };
@@ -160,6 +165,8 @@ export default class App extends Component {
   };
 
   loadData = async id => {
+    const userUrl = `https://www.matainventive.com/cordovaserver/database/jsonmatausersprofile.php?id=${id}`;
+    const user = await this.fetchData(userUrl).then(userData => userData);
     const cellsUrl = `https://www.matainventive.com/cordovaserver/database/jsonmatacell.php?id=${id}`;
     const cells = await this.fetchData(cellsUrl).then(cellsData => cellsData);
     const devicesUrl = `https://www.matainventive.com/cordovaserver/database/jsonmatacelladd.php?id=${id}`;
@@ -174,17 +181,21 @@ export default class App extends Component {
     const prepNotes = await this.fetchData(prepNotesUrl).then(prepNotesData => prepNotesData);
     const timersUrl = `https://www.matainventive.com/cordovaserver/database/jsonmataSensor.php?id=${id}`;
     const timers = await this.fetchData(timersUrl).then(timerData => timerData);
+    const chatHistoryUrl = `https://www.matainventive.com/cordovaserver/database/jsonmatachat.php?id=${id}`;
+    const chatHistory = await this.fetchData(chatHistoryUrl).then(chatHistoryData => chatHistoryData);
 
     const currentTime = Date.now();
-    const dataArr = await Promise.all([cells, devices, devicesDetails, jobsParts, timers, prepChecklists, prepNotes]).then(data => {
-      const cells = data[0];
-      const devices = data[1];
-      const devicesDetails = this.createDeviceObject(data[2]);
-      const jobsParts = data[3];
-      const timers = this.createObjectWithIDKeys(data[4]);
-      const prepChecklists = this.createObjectWithIDKeys(data[5]);
-      const prepNotes = this.createObjectWithIDKeys(data[6]);
+    const dataArr = await Promise.all([user, cells, devices, devicesDetails, jobsParts, timers, prepChecklists, prepNotes, chatHistory]).then(data => {
+      const user = data[0]
+      const cells = data[1];
+      const devices = data[2];
+      const devicesDetails = this.createDeviceObject(data[3]);
+      const jobsParts = data[4];
+      const timers = this.createObjectWithIDKeys(data[5]);
+      const prepChecklists = this.createObjectWithIDKeys(data[6]);
+      const prepNotes = this.createObjectWithIDKeys(data[7]);
 
+      const userObj = user[0];
       let cellObj = {};
       let chatObj = { Machines:{}, Parts:{}, Jobs:{} };
       cells.forEach(cell => {
@@ -263,7 +274,7 @@ export default class App extends Component {
         }
       })
 
-      return [cellObj, chatObj]
+      return [userObj, cellObj, chatObj]
     })
 
     return dataArr;
@@ -343,7 +354,10 @@ export default class App extends Component {
     const timerTime = new Date(dateString).getTime();
     const timerRemaining = this.timeConversion(timerTime, true);
     newCells[cellId].devices[deviceId].timer = `${timerRemaining} Remain On Timer`;
-    this.setState({ cells: newCells });
+    this.setState(prevState => ({
+      cells: Object.assign(prevState.cells, newCells)
+    }));
+    this.countDownTimers();
   }
 
   // transition effects for chat submenu when clicking the navbar's left logo icon;
@@ -396,13 +410,14 @@ export default class App extends Component {
     console.log("history", JSON.stringify(this.state.chats[type][chat].chatHistory));
     const data = {
       userid: JSON.parse(localStorage.getItem("Mata Inventive")).ID,
-      type: chat,
+      type: type,
+      properties: chat,
       chat_history: JSON.stringify(this.state.chats[type][chat].chatHistory)
     }
 
     fetch(url, {
       method: 'POST',
-      body: "userid="+data.userid+"&type="+data.type+"&chat_history="+data.chat_history+"&insert=",
+      body: "userid="+data.userid+"&type="+data.type+"&properties="+data.properties+"&chat_history="+data.chat_history+"&insert=",
       headers:{ 'Content-Type':'application/x-www-form-urlencoded' }
     }).then(res => console.log(res))
     .then(response => console.log('Success:', JSON.stringify(response)))
@@ -495,7 +510,7 @@ export default class App extends Component {
           </div>
           <span id="profile" className="profile-wrapper">
             <Profile
-              userName={this.state.user.name}
+              user={this.state.user}
               selectProfile={this.selectProfile}
             />
           </span>

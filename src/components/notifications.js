@@ -1,5 +1,5 @@
 import React, { Component } from "react";
-import CollapseInput from "./collapseInput";
+// import CollapseInput from "./collapseInput";
 
 export default class Notifications extends Component {
   state = {

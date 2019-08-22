@@ -11,7 +11,7 @@ const Profile = props => {
     <div className="profile-container">
       <header className="profile-user">
         <img src="./assets/machine.png" alt="Profile"/>
-        <p>{props.userName}</p>
+        <p>{props.user.first_name} {props.user.last_name}</p>
       </header>
       <div className="profile-menus-container">
       {profileMenus.map((menu, idx) => {
