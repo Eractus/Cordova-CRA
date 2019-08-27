@@ -1,12 +1,22 @@
 import React from "react";
-import Feed from "./feed";
+import Feed from "./feed/feed";
 import Machine from "./machine";
 import ChatItem from "./chat/chatItem";
 import ProfileItem from "./profile/profileItem";
 
 const Main = props => {
   const renderMain = () => {
-    if (props.displayChat) {
+    //see parent of profileItem to see where toggleNotification comes from
+    if (props.displayProfile) {
+      return (
+        <ProfileItem
+          displayProfile={props.displayProfile}
+          user={props.user}
+          hideProfile={props.hideProfile}
+          toggleNotification={props.toggleNotification}
+        />
+      );
+    } else if (props.displayChat) {
       return (
         <ChatItem
           chats={props.chats}
@@ -15,19 +25,10 @@ const Main = props => {
           sendNewMessage={props.sendNewMessage}
         />
       );
-    } else if (props.displayProfile) {
-      return (
-        <ProfileItem
-          displayProfile={props.displayProfile}
-          user={props.user}
-          toggleNotification={props.toggleNotification}
-        />
-      );
     } else {
       if (!props.machineSelected) {
         return (
           <Feed
-            fetchData={props.fetchData}
             cells={props.cells}
             toggleMachineSelection={props.toggleMachineSelection}
           />
@@ -37,8 +38,9 @@ const Main = props => {
           <Machine
             machine={props.machineSelected}
             toggleMachineSelection={props.toggleMachineSelection}
-            savePrepChecklists={props.savePrepChecklists}
+            saveReporting={props.saveReporting}
             setDeviceTimer={props.setDeviceTimer}
+            saveNewJob={props.saveNewJob}
           />
         );
       }

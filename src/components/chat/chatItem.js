@@ -56,7 +56,10 @@ export default class ChatItem extends Component {
   };
 
   checkChatInitialTime = () => {
-    if (!this.props.chats[this.props.displayChat[0]][this.props.displayChat[1]].chatHistory.chatFirstBegan) {
+    if (
+      !this.props.chats[this.props.displayChat[0]][this.props.displayChat[1]]
+        .chatHistory.chatFirstBegan
+    ) {
       let currentTime = new Date();
       let hour = currentTime.getHours();
       let mins = currentTime.getMinutes();
@@ -65,9 +68,13 @@ export default class ChatItem extends Component {
       hour = hour === 0 ? 12 : hour;
       hour = hour > 12 ? hour - 12 : hour;
       currentTime = `${hour}:${mins} ${amPM}`;
-      this.props.setInitialTime(this.props.displayChat[0], this.props.displayChat[1], currentTime)
+      this.props.setInitialTime(
+        this.props.displayChat[0],
+        this.props.displayChat[1],
+        currentTime
+      );
     }
-  }
+  };
 
   // using setTimeout with 0.15 of a second to allow enough time for the on blur effect to kick in after user has a chance to actually click a recommendation
   toggleRecommendations = type => {
@@ -77,17 +84,17 @@ export default class ChatItem extends Component {
       let displayStyle, marginBottom;
       if (type === "focus") {
         displayStyle = "flex";
-        marginBottom = "85px"
+        marginBottom = "85px";
       } else if (type === "blur") {
         displayStyle = "none";
-        marginBottom = "40px"
+        marginBottom = "40px";
       }
       setTimeout(() => {
-        document.getElementById("recommendations").style.display = displayStyle
-        document.getElementById("messages").style.marginBottom = marginBottom
+        document.getElementById("recommendations").style.display = displayStyle;
+        document.getElementById("messages").style.marginBottom = marginBottom;
       }, timer);
-    }
-  }
+    };
+  };
 
   render = () => {
     const chatItem = this.props.chats[this.props.displayChat[0]][
@@ -140,9 +147,15 @@ export default class ChatItem extends Component {
             );
           })}
         </section>
-        <div className="chat-item-message-submit-overlay" style={{display: this.state.focusedMessageInput ? "block" : "none"}} />
+        <div
+          className="chat-item-message-submit-overlay"
+          style={{ display: this.state.focusedMessageInput ? "block" : "none" }}
+        />
         <form className="chat-item-message-submit" onSubmit={this.handleSubmit}>
-          <div id="recommendations" className="chat-item-message-submit-recommendations">
+          <div
+            id="recommendations"
+            className="chat-item-message-submit-recommendations"
+          >
             {Object.keys(chatItem.responses).map((recom, idx) => (
               <p key={idx} onClick={this.sendRecommendationAsMessage(recom)}>
                 {recom}

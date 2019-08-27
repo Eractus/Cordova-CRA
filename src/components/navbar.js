@@ -5,25 +5,25 @@ const Navbar = props => {
   if (props.displayChat || props.displayProfile || props.displayCamera) {
     if (props.displayCamera) {
       navbarText = "Scanner";
-    } else if (props.displayChat) {
-      navbarText = props.displayChat[1];
     } else if (props.displayProfile) {
       navbarText = props.displayProfile;
+    } else if (props.displayChat) {
+      navbarText = props.displayChat[1];
     }
   }
 
   let navbarLeft;
-  if (props.displayChat || props.displayCamera) {
-    navbarLeft = (
-      <span className="back-icon" onClick={props.hideChat}>
-        &lsaquo;
-      </span>
-    );
-  } else if (props.displayProfile) {
+  if (props.displayProfile) {
     navbarLeft = (
       <span className="back-icon profile" onClick={props.hideProfile}>
         <span>&lsaquo;</span>
         <p>Back</p>
+      </span>
+    );
+  } else if (props.displayChat || props.displayCamera) {
+    navbarLeft = (
+      <span className="back-icon" onClick={props.hideChat}>
+        &lsaquo;
       </span>
     );
   } else {

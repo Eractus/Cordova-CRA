@@ -22,6 +22,32 @@ export default class StartJob extends Component {
     showConfirmation: false
   };
 
+  componentDidMount = () => {
+    if (this.props.jobNumber !== "" && this.props.partNumber !== "") {
+      this.setState(
+        prevState => (
+          (prevState.jobs[0].inputValues.jobNumber = this.props.jobNumber),
+          (prevState.jobs[0].inputValues.partNumber = this.props.jobNumber),
+          prevState
+        )
+      );
+    } else if (this.props.partNumber !== "") {
+      this.setState(
+        prevState => (
+          (prevState.jobs[0].inputValues.partNumber = this.props.partNumber),
+          prevState
+        )
+      );
+    } else if (this.props.jobNumber !== "") {
+      this.setState(
+        prevState => (
+          (prevState.jobs[0].inputValues.jobNumber = this.props.jobNumber),
+          prevState
+        )
+      );
+    }
+  };
+
   toggleConfirmation = () => {
     this.setState({ showConfirmation: !this.state.showConfirmation });
   };
@@ -78,50 +104,65 @@ export default class StartJob extends Component {
   };
 
   insertJob = async idx => {
-    const url = "https://www.matainventive.com/cordovaserver/database/insertjob.php";
+    const url =
+      "https://www.matainventive.com/cordovaserver/database/insertjob.php";
     const data = {
       userid: JSON.parse(localStorage.getItem("Mata Inventive")).ID,
       deviceid: this.props.machine.device_id,
       jobnumber: this.state.jobs[idx].inputValues.jobNumber,
       partnumber: this.state.jobs[idx].inputValues.partNumber,
       partcount: this.state.jobs[idx].inputValues.partCount
-    }
+    };
 
     fetch(url, {
-      method: 'POST',
-      body: "userid="+data.userid+"&deviceid="+data.deviceid+"&jobnumber="+data.jobnumber+"&partnumber="+data.partnumber+"&partcount="+data.partcount.toString()+"&insert=",
-      headers:{ 'Content-Type':'application/x-www-form-urlencoded' }
-    }).then(res => console.log(res))
-    .then(response => console.log('Success:', JSON.stringify(response)))
-    .catch(error => console.error('Error:', error));
-  }
+      method: "POST",
+      body:
+        "userid=" +
+        data.userid +
+        "&deviceid=" +
+        data.deviceid +
+        "&jobnumber=" +
+        data.jobnumber +
+        "&partnumber=" +
+        data.partnumber +
+        "&partcount=" +
+        data.partcount.toString() +
+        "&insert=",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" }
+    })
+      .then(res => console.log(res))
+      .then(response => console.log("Success:", JSON.stringify(response)))
+      .catch(error => console.error("Error:", error));
+  };
 
   postAllJobs = async () => {
     let jobs = [];
-    for (let i=0; i<this.state.jobs.length; i++) {
+    for (let i = 0; i < this.state.jobs.length; i++) {
       const job = await this.insertJob(i);
       jobs.push(job);
     }
 
     const allJobsRes = await Promise.all(jobs).then(res => {
       console.log("pAll", res);
-    })
+    });
     return allJobsRes;
-  }
+  };
 
   handleSubmit = () => {
     if (this.hasNoEmptyCards()) {
       this.postAllJobs().then(res => {
         console.log("res", res);
+        this.props.saveNewJob(this.state.jobs);
         this.toggleConfirmation();
-      })
+      });
     } else {
       this.toggleEmptyCardModal();
     }
   };
 
-  toggleCamera = () => {
-    this.setState({ showCamera: !this.state.showCamera });
+  toggleCamera = e => {
+    let inputIndicator = e.target.attributes[0].value;
+    this.props.toggleCamera(inputIndicator);
   };
 
   toggleEmptyCardModal = () => {

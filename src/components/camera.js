@@ -1,88 +1,76 @@
-import React from "react";
-import CameraPhoto, { FACING_MODES } from "jslib-html5-camera-photo";
+import React, { Component } from "react";
+import Camera, { FACING_MODES, IMAGE_TYPES } from "react-html5-camera-photo";
+import "react-html5-camera-photo/build/css/index.css";
+import axios from "axios";
 
-class Camera extends React.Component {
-  constructor(props, context) {
-    super(props, context);
-    this.cameraPhoto = null;
-    this.videoRef = React.createRef();
-    this.state = {
-      dataUri: ""
-    };
-  }
-
-  componentDidMount() {
-    this.cameraPhoto = new CameraPhoto(this.videoRef.current);
-
-    this.startCameraMaxResolution(FACING_MODES.ENVIRONMENT);
-  }
-
-  startCameraMaxResolution(idealFacingMode) {
-    this.cameraPhoto
-      .startCameraMaxResolution(idealFacingMode)
-      .then(() => {
-        console.log("camera is started !");
-      })
-      .catch(error => {
-        console.error("Camera not started!", error);
-      });
-  }
-
-  takePhoto = async () => {
+class TakePhoto extends Component {
+  onTakePhoto = async dataUri => {
     const config = {
-      sizeFactor: 1
+      sizeFactor: 1,
+      imgCompression: 0.5
     };
 
-    let dataUri = this.cameraPhoto.getDataUri(config);
-    console.log(dataUri);
-    await this.setState({ dataUri });
-    this.props.toggleCamera();
-  };
+    var data = {
+      requests: [
+        {
+          image: {
+            content: dataUri.slice(23)
+          },
+          features: [
+            {
+              type: "TEXT_DETECTION",
+              maxResults: 5
+            }
+          ]
+        }
+      ]
+    };
 
-  stopCamera() {
-    this.cameraPhoto
-      .stopCamera()
-      .then(() => {
-        console.log("Camera stoped!");
+    await axios({
+      method: "post",
+      url:
+        "https://vision.googleapis.com/v1/images:annotate?key=AIzaSyDbXhEc-ohKbIv4J8J8drPfAnNZ1Q8cEOk",
+      data
+    })
+      .then(r => {
+        let array = r.data.responses[0].textAnnotations;
+        for (let x = 1; x < array.length; x++) {
+          let data = array[x].description;
+
+          if (data.match(/\d/g) && data.length > 7) {
+            return this.props.cameraOffAndSetInput(array[x].description);
+          } else if (!data.match(/[A-z]/i) && data.length >= 5) {
+            return this.props.cameraOffAndSetInput(array[x].description);
+          }
+        }
       })
+
       .catch(error => {
-        console.log("No camera to stop!:", error);
+        window.confirm(error);
       });
-  }
+  };
 
   render() {
     return (
-      <div className="camera-container">
-        <div className="camera-header">
-          <span onClick={this.props.toggleCamera}>&lsaquo;</span>
-          <h4>Scanner</h4>
-        </div>
-        <div className="camera-preview-wrapper">
-          <video className="camera-preview" ref={this.videoRef} autoPlay="true" />
-        </div>
-        ​<div className="camera-bottom">
-          {this.state.dataUri === "" ? (
-            <button
-              onClick={() => {
-                this.takePhoto();
-              }}
-              className="camera-button-outer-circle"
-            >
-              <button className="camera-button-inner-circle" />
-            </button>
-          ) : (
-            ""
-          )}
-        </div>
-        {this.state.dataUri === "" ? (
-          ""
-        ) : (
-          <img src={this.state.dataUri} alt="DataURI" />
-        )}
-        ​
+      <div className="start-job-container">
+        <Camera
+          onTakePhoto={dataUri => {
+            this.onTakePhoto(dataUri);
+          }}
+          idealFacingMode={FACING_MODES.ENVIRONMENT}
+          idealResolution={{ width: 640, height: 480 }}
+          imageType={IMAGE_TYPES.JPG}
+          imageCompression={0.97}
+          isMaxResolution={false}
+          isImageMirror={false}
+          isSilentMode={true}
+          isDisplayStartCameraError={true}
+          isFullscreen={false}
+          sizeFactor={1}
+        />
       </div>
     );
   }
 }
 
-export default Camera;
+export default TakePhoto;

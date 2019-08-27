@@ -2,7 +2,11 @@ import React from "react";
 import Timer from "./timer";
 
 const CollapseInput = props => {
-  const hasTimer = props.hasTimer ? <Timer dndTimerType={props.inputName} notificationTimer={true} /> : "";
+  const hasTimer = props.hasTimer ? (
+    <Timer dndTimerType={props.inputName} notificationTimer={true} />
+  ) : (
+    ""
+  );
   const hasLinks = props.hasLinks ? (
     <div className="settings-link-container">
       <a

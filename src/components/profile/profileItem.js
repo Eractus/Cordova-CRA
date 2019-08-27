@@ -5,6 +5,7 @@ import Support from "../support";
 import Logout from "../logout";
 
 const ProfileItem = props => {
+  //see where the props.toggleNotification is//parent is main.js
   let profileItem;
   switch (props.displayProfile) {
     case "Notifications":
@@ -22,7 +23,7 @@ const ProfileItem = props => {
       profileItem = <Support user={props.user} />;
       break;
     case "Log Out":
-      profileItem = <Logout />;
+      profileItem = <Logout hideProfile={props.hideProfile} />;
       break;
     default:
       return "";

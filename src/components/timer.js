@@ -12,7 +12,11 @@ export default class Timer extends Component {
   };
 
   toggleConfirmation = () => {
-    this.setState({ showConfirmation: !this.state.showConfirmation });
+    if (!this.state.showConfirmation) {
+      this.setState({ showConfirmation: !this.state.showErrorModal });
+    } else {
+      window.location.reload();
+    }
   };
 
   toggleErrorModal = () => {
@@ -28,17 +32,20 @@ export default class Timer extends Component {
     const sec = this.formatSingleDigit(date.getSeconds());
 
     return `${year}-${month}-${day}T${hour}:${min}:${sec}`;
-  }
+  };
 
   formatSingleDigit = timeVal => {
-    return timeVal = timeVal < 10 ? `0${timeVal}` : timeVal;
-  }
+    return (timeVal = timeVal < 10 ? `0${timeVal}` : timeVal);
+  };
 
   postTimerValues = async () => {
-    const url = "https://www.matainventive.com/cordovaserver/database/inserttimestart.php";
+    const url =
+      "https://www.matainventive.com/cordovaserver/database/inserttimestart.php";
     const currentDate = new Date();
     const today = this.formatTime(currentDate);
-    const currentDateGMT = new Date(currentDate.getTime() + (currentDate.getTimezoneOffset() * 60000));
+    const currentDateGMT = new Date(
+      currentDate.getTime() + currentDate.getTimezoneOffset() * 60000
+    );
     const todayserver = this.formatTime(currentDateGMT);
     const data = {
       userid: JSON.parse(localStorage.getItem("Mata Inventive")).ID,
@@ -48,41 +55,75 @@ export default class Timer extends Component {
       second: this.state.second,
       today: today,
       todayserver: todayserver
-    }
+    };
 
     fetch(url, {
-      method: 'POST',
-      body: "userid="+data.userid+"&deviceid="+data.deviceid+"&hour="+data.hour+"&minute="+data.minute+"&second="+data.second+"&today="+data.today+"&todayserver="+data.todayserver+"&insert=",
-      headers:{ 'Content-Type':'application/x-www-form-urlencoded' }
-    }).then(res => console.log(res))
-    .then(response => console.log('Success:', JSON.stringify(response)))
-    .catch(error => console.error('Error:', error));
-  }
+      method: "POST",
+      body:
+        "userid=" +
+        data.userid +
+        "&deviceid=" +
+        data.deviceid +
+        "&hour=" +
+        data.hour +
+        "&minute=" +
+        data.minute +
+        "&second=" +
+        data.second +
+        "&today=" +
+        data.today +
+        "&todayserver=" +
+        data.todayserver +
+        "&insert=",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" }
+    })
+      .then(res => console.log(res))
+      .then(response => console.log("Success:", JSON.stringify(response)))
+      .catch(error => console.error("Error:", error));
+  };
 
   handleStartTimer = () => {
-    if (this.state.hour === 0 && this.state.minute === 0 && this.state.second === 0) {
+    if (
+      this.state.hour === 0 &&
+      this.state.minute === 0 &&
+      this.state.second === 0
+    ) {
       this.toggleErrorModal();
     } else {
       this.postTimerValues().then(res => {
         console.log(res);
         const currState = this.state;
         const { showConfirmation, ...timerVals } = currState;
-        const timerInMilliSeconds = ((parseInt(timerVals.hour)*3600) + (parseInt(timerVals.minute)*60) + parseInt(timerVals.second))*1000;
-        const dateString = this.formatTime(new Date(timerInMilliSeconds))
-        this.props.setDeviceTimer(this.props.machine.cell_id, this.props.machine.device_id, dateString);
+        const timerInMilliSeconds =
+          (parseInt(timerVals.hour) * 3600 +
+            parseInt(timerVals.minute) * 60 +
+            parseInt(timerVals.second)) *
+          1000;
+        const dateString = this.formatTime(new Date(timerInMilliSeconds));
+        this.props.setDeviceTimer(
+          this.props.machine.cell_id,
+          this.props.machine.device_id,
+          dateString
+        );
         this.toggleConfirmation();
-      })
+      });
     }
   };
 
   updateTimerValue = field => {
     return () => {
-      const timerType = this.props.notificationTimer ? `.${this.props.dndTimerType}` : "";
-      const selectorClass = this.props.notificationTimer ? `.timer-selector-bar${timerType}` : ".timer-selector-bar"
+      const timerType = this.props.notificationTimer
+        ? `.${this.props.dndTimerType}`
+        : "";
+      const selectorClass = this.props.notificationTimer
+        ? `.timer-selector-bar${timerType}`
+        : ".timer-selector-bar";
       let selector = document
         .querySelector(selectorClass)
         .getBoundingClientRect();
-      let fieldElements = document.querySelectorAll(`.timer-value.${field}${timerType}`);
+      let fieldElements = document.querySelectorAll(
+        `.timer-value.${field}${timerType}`
+      );
       // for each timer element that isn't one of the empty spaces for placeholder/styling purposes, get the average of its top and bottom positions and check that against the selector bar's top and bottom bounding positions to determine if it should be selected and also update the state's value for that timer spec for handling submit
       fieldElements.forEach(elem => {
         if (elem.innerHTML !== " ") {
@@ -95,7 +136,9 @@ export default class Timer extends Component {
             elem.className = `timer-value ${field} ${timerTypeNoPeriod} selected`;
             this.setState({ [field]: parseInt(elem.innerHTML) });
           } else {
-            if (elem.className !== `timer-value ${field} ${timerTypeNoPeriod}`) {
+            if (
+              elem.className !== `timer-value ${field} ${timerTypeNoPeriod}`
+            ) {
               elem.className = `timer-value ${field} ${timerTypeNoPeriod}`;
             }
           }
@@ -128,9 +171,15 @@ export default class Timer extends Component {
         />
       );
     } else {
-      const containerClassName = this.props.notificationTimer ? "timer-container notification" : "timer-container";
-      const buttonClassName = this.props.notificationTimer ? "form-submit-button hide" : "form-submit-button";
-      const selectorClassName = this.props.notificationTimer ? `timer-selector-bar ${this.props.dndTimerType}` : "timer-selector-bar";
+      const containerClassName = this.props.notificationTimer
+        ? "timer-container notification"
+        : "timer-container";
+      const buttonClassName = this.props.notificationTimer
+        ? "form-submit-button hide"
+        : "form-submit-button";
+      const selectorClassName = this.props.notificationTimer
+        ? `timer-selector-bar ${this.props.dndTimerType}`
+        : "timer-selector-bar";
 
       const errorModal = this.state.showErrorModal ? (
         <span className="start-job-modal-overlay">
@@ -154,10 +203,7 @@ export default class Timer extends Component {
             <span className={selectorClassName} />
             {scrollables}
           </div>
-          <button
-            className={buttonClassName}
-            onClick={this.handleStartTimer}
-          >
+          <button className={buttonClassName} onClick={this.handleStartTimer}>
             Start
           </button>
         </div>
@@ -166,7 +212,9 @@ export default class Timer extends Component {
   };
 
   render = () => {
-    const className = this.props.notificationTimer ? "overlay notification" : "overlay";
+    const className = this.props.notificationTimer
+      ? "overlay notification"
+      : "overlay";
     return (
       <div>
         <div className={className} onClick={this.props.hideTask} />

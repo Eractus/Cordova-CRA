@@ -25,23 +25,23 @@ export default class Splash extends Component {
 
   handleSubmit = e => {
     e.preventDefault();
-
-    // some error handling to check for empty username/password (username including just whitespace), and then logging in or displayng more errors depending on the outcome of the fetch ajax call
+    // some error handling to check for empty username/password (username including just whitespace)
     if (this.state.Username.trim() === "") {
       this.setState({ loginErrors: "Username can't be blank." });
     } else if (this.state.Password === "") {
       this.setState({ loginErrors: "Password can't be blank." });
     } else {
-      const url = `https://www.matainventive.com/wp-json/custom-plugin/login?username=${this.state.Username}&password=${this.state.Password}`;
+      const url = `https://www.matainventive.com/wp-json/custom-plugin/login?username=${
+        this.state.Username
+      }&password=${this.state.Password}`;
       this.props.fetchData(url).then(data => {
         if (data) {
-          this.props.logIn(data.data.ID).then(res => {
-            localStorage.setItem('Mata Inventive', JSON.stringify(data.data));
-          });
+          localStorage.setItem("Mata Inventive", JSON.stringify(data.data));
+          window.location.reload();
         } else {
-          this.setState({ loginErrors: "Username or Password is incorrect." })
+          this.setState({ loginErrors: "Username or Password is incorrect." });
         }
-      })
+      });
     }
   };
 
@@ -62,15 +62,13 @@ export default class Splash extends Component {
         {this.state.showLogin ? (
           <form className="login-form" onSubmit={this.handleSubmit}>
             <div className="login-form-inputs-container">{inputFields}</div>
-            <div className="login-form-password-retrieve">
-              <a
-                href="https://www.matainventive.com/password-recovery"
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                Forgot Password?
-              </a>
-            </div>
+            <a
+              href="https://www.matainventive.com/password-recovery"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              Forgot Password?
+            </a>
             <p>{this.state.loginErrors}</p>
             <input className="login-form-button" type="submit" value="Log In" />
           </form>

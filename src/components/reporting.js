@@ -1,12 +1,12 @@
 import React, { Component } from "react";
 import Confirmation from "./confirmation";
 
-export default class PreparationChecklist extends Component {
+export default class Reporting extends Component {
   state = {
     cells: {
       Machining: {
         "Clean Chamber": false,
-        "Tool Offset": false,
+        "Clear Alarm": false,
         "Inspection Room": false
       },
       Preparation: {
@@ -25,28 +25,28 @@ export default class PreparationChecklist extends Component {
   };
 
   componentDidMount = () => {
-    const prepChkDict = {
-      "clean": ["Machining", "Clean Chamber"],
-      "offset": ["Machining", "Tool Offset"],
-      "inspection": ["Machining", "Inspection Room"],
-      "speccheck": ["Preparation", "Job Spec Confirmation"],
-      "cadwork": ["Preparation", "Revise CAD Modeling"],
-      "toolpath": ["Preparation", "Edit Toolpath"]
-    }
+    const reportingDict = {
+      clean: ["Machining", "Clean Chamber"],
+      offset: ["Machining", "Clear Alarm"],
+      inspection: ["Machining", "Inspection Room"],
+      speccheck: ["Preparation", "Job Spec Confirmation"],
+      cadwork: ["Preparation", "Revise CAD Modeling"],
+      toolpath: ["Preparation", "Edit Toolpath"]
+    };
 
-    let prepChecklistObj = { Machining: {}, Preparation:{} };
-    Object.keys(this.props.machine.prepChecklist).forEach(prepType => {
-      let prepVal = this.props.machine.prepChecklist[prepType]
+    let reportingObj = { Machining: {}, Preparation: {} };
+    Object.keys(this.props.machine.reporting).forEach(prepType => {
+      let prepVal = this.props.machine.reporting[prepType];
       if (prepType === "notes") {
-        prepChecklistObj.Note = prepVal;
+        reportingObj.Note = prepVal;
       } else {
         prepVal = this.handleEmptyString(prepVal);
-        const stateKeys = prepChkDict[prepType];
-        prepChecklistObj[stateKeys[0]][stateKeys[1]] = prepVal;
+        const stateKeys = reportingDict[prepType];
+        reportingObj[stateKeys[0]][stateKeys[1]] = prepVal;
       }
-    })
-    this.setState({ cells: prepChecklistObj, prevNote: prepChecklistObj.Note });
-  }
+    });
+    this.setState({ cells: reportingObj, prevNote: reportingObj.Note });
+  };
 
   handleEmptyString = str => {
     if (typeof str === "string") {
@@ -58,7 +58,7 @@ export default class PreparationChecklist extends Component {
     } else {
       return str;
     }
-  }
+  };
 
   selectCell = cell => {
     return () => {
@@ -87,35 +87,62 @@ export default class PreparationChecklist extends Component {
   };
 
   saveChecklistValues = async () => {
-    const url = "https://www.matainventive.com/cordovaserver/database/insertprepall.php";
+    const url =
+      "https://www.matainventive.com/cordovaserver/database/insertprepall.php";
     const data = {
       userid: JSON.parse(localStorage.getItem("Mata Inventive")).ID,
       deviceid: this.props.machine.device_id,
       prepspec: this.state.cells.Preparation["Job Spec Confirmation"],
       prepcad: this.state.cells.Preparation["Revise CAD Modeling"],
       preppath: this.state.cells.Preparation["Edit Toolpath"],
-      prepoffset: this.state.cells.Machining["Tool Offset"],
+      prepreporting: this.state.cells.Machining["Clear Alarm"],
       prepclean: this.state.cells.Machining["Clean Chamber"],
       partnumber: "",
       jobnumber: "",
       inspection: this.state.cells.Machining["Inspection Room"]
-    }
+    };
 
     fetch(url, {
-      method: 'POST',
-      body: "userid="+data.userid+"&deviceid="+data.deviceid+"&prepspec="+data.prepspec+"&prepcad="+data.prepcad+"&preppath="+data.preppath+"&prepoffset="+data.prepoffset+"&prepclean="+data.prepclean+"&partnumber="+data.partnumber+"&jobnumber="+data.jobnumber+"&inspection="+data.inspection+"&insert=",
-      headers:{ 'Content-Type':'application/x-www-form-urlencoded' }
-    }).then(res => console.log(res))
-    .then(response => console.log('Success:', JSON.stringify(response)))
-    .catch(error => console.error('Error:', error));
-  }
+      method: "POST",
+      body:
+        "userid=" +
+        data.userid +
+        "&deviceid=" +
+        data.deviceid +
+        "&prepspec=" +
+        data.prepspec +
+        "&prepcad=" +
+        data.prepcad +
+        "&preppath=" +
+        data.preppath +
+        "&prepoffset=" +
+        data.prepreporting +
+        "&prepclean=" +
+        data.prepclean +
+        "&partnumber=" +
+        data.partnumber +
+        "&jobnumber=" +
+        data.jobnumber +
+        "&inspection=" +
+        data.inspection +
+        "&insert=",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" }
+    })
+      .then(res => console.log(res))
+      .then(response => console.log("Success:", JSON.stringify(response)))
+      .catch(error => console.error("Error:", error));
+  };
 
   handleSaveChecklist = () => {
     this.saveChecklistValues().then(res => {
       console.log(res);
-      this.props.savePrepChecklists(this.props.machine.cell_id, this.props.machine.device_id, this.state)
+      this.props.saveReporting(
+        this.props.machine.cell_id,
+        this.props.machine.device_id,
+        this.state.cells
+      );
       this.toggleConfirmation();
-    })
+    });
   };
 
   toggleChecklist = checkList => {
@@ -128,23 +155,36 @@ export default class PreparationChecklist extends Component {
   };
 
   postNote = async () => {
-    const url = "https://www.matainventive.com/cordovaserver/database/insertnote.php";
+    const url =
+      "https://www.matainventive.com/cordovaserver/database/insertnote.php";
     const data = {
       userid: JSON.parse(localStorage.getItem("Mata Inventive")).ID,
       deviceid: this.props.machine.device_id,
       note: this.state.cells.Note,
       partnumber: "",
-      jobnumber: "",
-    }
+      jobnumber: ""
+    };
 
     fetch(url, {
-      method: 'POST',
-      body: "userid="+data.userid+"&deviceid="+data.deviceid+"&note="+data.note+"&partnumber="+data.partnumber+"&jobnumber="+data.jobnumbernote+"&insert=",
-      headers:{ 'Content-Type':'application/x-www-form-urlencoded' }
-    }).then(res => console.log(res))
-    .then(response => console.log('Success:', JSON.stringify(response)))
-    .catch(error => console.error('Error:', error));
-  }
+      method: "POST",
+      body:
+        "userid=" +
+        data.userid +
+        "&deviceid=" +
+        data.deviceid +
+        "&note=" +
+        data.note +
+        "&partnumber=" +
+        data.partnumber +
+        "&jobnumber=" +
+        data.jobnumbernote +
+        "&insert=",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" }
+    })
+      .then(res => console.log(res))
+      .then(response => console.log("Success:", JSON.stringify(response)))
+      .catch(error => console.error("Error:", error));
+  };
 
   // after saving Note, switch back to the previous cell view that the user was at before displaying Note
   saveNote = () => {
@@ -158,7 +198,7 @@ export default class PreparationChecklist extends Component {
         prevNote: this.state.cells.Note
       });
       this.toggleNote();
-    })
+    });
   };
 
   // similar logic to save note, but uses a previously saved value to switch the value back to it so as not to save any updates the user may have

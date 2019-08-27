@@ -11,10 +11,11 @@ export default class Notifications extends Component {
     return () => {
       const key = `show${type}Timer`;
       this.setState({ [key]: !this.state[key] });
-    }
-  }
+    };
+  };
 
   render = () => {
+    // sends props to toggle input/////////////////////////////////////////////////////////////////toggle input sends in toggleNotification function from another component// see what the parent of notifications is//profileItem
     return (
       <div className="notifications-container">
         {Object.keys(this.props.user.notifications).map((notif, idx) => {
@@ -29,9 +30,8 @@ export default class Notifications extends Component {
                 toggleNotification={this.props.toggleNotification}
               />
             );
-          // } else {
+            // } else {
             // if it's for do not disturb, there's a more elaborate JSX layout on top of a ToggleInput functional component, including two CollapseInput functional components.
-
           }
         })}
       </div>
@@ -68,7 +68,6 @@ export default class Notifications extends Component {
 // );
 
 const ToggleInput = props => {
-  // various class name and other values change based on App component's current state value for notification and other related pointers
   const inputName =
     props.notification === "Scheduled"
       ? "Scheduled"
@@ -76,6 +75,7 @@ const ToggleInput = props => {
   const sliderClassName = props.toggled
     ? "toggle-input-slider toggled"
     : "toggle-input-slider";
+
   const circleClassName = props.toggled
     ? "toggle-input-circle toggled"
     : "toggle-input-circle";
@@ -87,7 +87,7 @@ const ToggleInput = props => {
         <p>{inputName}</p>
         <div
           className={sliderClassName}
-          onClick={props.toggleNotification(toggleArg)}
+          onClick={() => props.toggleNotification(toggleArg)}
         >
           <span className={circleClassName} />
         </div>
