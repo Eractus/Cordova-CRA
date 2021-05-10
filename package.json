@@ -5,7 +5,7 @@
   "homepage": "../www",
   "dependencies": {
     "axios": "^0.19.0",
-    "lodash": "^4.17.15",
+    "lodash": "^4.17.21",
     "react": "^16.8.6",
     "react-dom": "^16.8.6",
     "react-html5-camera-photo": "^1.4.3",
